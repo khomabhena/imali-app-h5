@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Email Change - Imali</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header with gradient -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Imali</h1>
+              <p style="margin: 8px 0 0 0; color: #f0fdfa; font-size: 16px; font-weight: 400;">Your Financial Companion</p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 24px; font-weight: 700; line-height: 1.3;">Confirm Your New Email Address</h2>
+              
+              <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                You've requested to change your email address for your Imali account. To complete this change, please confirm your new email address by clicking the button below.
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td align="center" style="padding: 0 0 32px 0;">
+                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 14px 32px; background-color: #14b8a6; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; text-align: center; transition: background-color 0.2s;">
+                      Confirm New Email
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Alternative link -->
+              <p style="margin: 0 0 24px 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                If the button doesn't work, copy and paste this link into your browser:
+              </p>
+              <p style="margin: 0 0 32px 0; word-break: break-all;">
+                <a href="{{ .ConfirmationURL }}" style="color: #14b8a6; text-decoration: underline; font-size: 14px;">{{ .ConfirmationURL }}</a>
+              </p>
+
+              <!-- Security note -->
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 4px; margin-top: 32px;">
+                <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">
+                  <strong>Security Note:</strong> If you didn't request this email change, please contact our support team immediately to secure your account.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px; background-color: #f9fafb; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 14px; text-align: center; line-height: 1.6;">
+                Need help? Contact us at <a href="mailto:support@imali.app" style="color: #14b8a6; text-decoration: none;">support@imali.app</a>
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                © 2025 Imali. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+
