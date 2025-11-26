@@ -47,9 +47,11 @@ export default function Dashboard() {
           {/* User Welcome */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 hidden rounded-full bg-white/20 items-center justify-center">
-                <span className="text-lg font-semibold">U</span>
-              </div>
+              <img 
+                src="/app-icon.png" 
+                alt="iMali" 
+                className="w-12 h-12 rounded-xl object-contain"
+              />
               <div>
                 <p className="font-bold text-2xl">iMali</p>
                 <p className="text-sm text-teal-100">{user?.email?.split('@')[0] || 'User'}</p>
