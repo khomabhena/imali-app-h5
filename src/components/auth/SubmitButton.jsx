@@ -12,7 +12,7 @@ export default function SubmitButton({
     <button
       type="submit"
       disabled={loading}
-      className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold py-3.5 rounded-lg hover:from-teal-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-teal-500/30"
+      className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold py-4 rounded-lg hover:from-teal-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-teal-500/30 text-lg min-h-[52px]"
       {...props}
     >
       {loading ? (

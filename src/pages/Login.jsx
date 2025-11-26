@@ -103,8 +103,8 @@ export default function Login() {
     >
       <form onSubmit={handleSubmit} className="pb-6">
         {/* Form Card */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
-          <div className="space-y-5">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
+          <div className="space-y-6">
             <ErrorMessage message={errors.submit} />
 
             <EmailInput
@@ -121,22 +121,22 @@ export default function Login() {
                   autoComplete="current-password"
                 />
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-3">
               <div className="flex items-center">
                 <input
                   id="remember"
                   name="remember"
                   type="checkbox"
-                  className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded cursor-pointer"
+                  className="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded cursor-pointer"
                 />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700 cursor-pointer">
+                <label htmlFor="remember" className="ml-3 block text-base text-gray-700 cursor-pointer">
                   Remember me
                 </label>
               </div>
 
               <Link
                 to="/forgot-password"
-                className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                className="text-base text-teal-600 hover:text-teal-700 font-medium transition-colors py-2 px-2"
               >
                 Forgot password?
               </Link>

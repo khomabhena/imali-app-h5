@@ -105,8 +105,8 @@ export default function SignUp() {
     >
       <form onSubmit={handleSubmit} className="pb-6">
         {/* Form Card */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
-          <div className="space-y-5">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
+          <div className="space-y-6">
             <ErrorMessage message={errors.submit} />
 
             <EmailInput

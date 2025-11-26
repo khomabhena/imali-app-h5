@@ -32,7 +32,7 @@ export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe">
       <div className="max-w-md mx-auto">
-        <div className="flex items-center justify-around px-2 py-2">
+        <div className="flex items-center justify-around px-2 py-3">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || 
               (item.path === '/dashboard' && location.pathname === '/') ||
@@ -44,14 +44,14 @@ export default function BottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg transition-colors min-h-[60px] min-w-[60px] ${
                   isActive
                     ? 'text-teal-600'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <Icon className="w-6 h-6" />
-                <span className="text-xs font-medium">{item.label}</span>
+                <Icon className="w-7 h-7" />
+                <span className="text-sm font-medium">{item.label}</span>
               </Link>
             );
           })}

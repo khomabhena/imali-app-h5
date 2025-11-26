@@ -148,8 +148,8 @@ export default function Income() {
             </div>
           )}
           {/* Form Fields Card */}
-          <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
+            <div className="space-y-5">
               {/* Amount Input */}
               <Input
                 label="Amount"
@@ -167,7 +167,7 @@ export default function Income() {
 
               {/* Currency Selector */}
               <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-base font-medium text-gray-700 mb-2.5">
                   Currency <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -176,7 +176,7 @@ export default function Income() {
                   onChange={handleChange}
                   className={`
                     w-full rounded-lg border transition-all duration-200
-                    pl-3 pr-3 py-3 text-gray-900 text-base
+                    pl-4 pr-4 py-4 text-gray-900 text-lg min-h-[52px]
                     ${errors.currency
                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50/50'
                       : 'border-gray-200 focus:border-teal-500 focus:ring-teal-500/20 bg-gray-50 hover:bg-white hover:border-gray-300'
@@ -192,7 +192,7 @@ export default function Income() {
                   ))}
                 </select>
                 {errors.currency && (
-                  <p className="mt-1.5 text-sm text-red-600">{errors.currency}</p>
+                  <p className="mt-2 text-base text-red-600">{errors.currency}</p>
                 )}
               </div>
 
@@ -221,7 +221,7 @@ export default function Income() {
 
               {/* Note (Optional) */}
               <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-base font-medium text-gray-700 mb-2.5">
                   Note
                 </label>
                 <textarea
@@ -229,10 +229,10 @@ export default function Income() {
                   value={formData.note}
                   onChange={handleChange}
                   placeholder="Add any additional notes..."
-                  rows={3}
+                  rows={4}
                   className="
                     w-full rounded-lg border border-gray-200 transition-all duration-200
-                    px-3 py-3 text-gray-900 placeholder-gray-400 text-base
+                    px-4 py-4 text-gray-900 placeholder-gray-400 text-lg
                     focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none
                     bg-gray-50 hover:bg-white hover:border-gray-300
                     resize-none

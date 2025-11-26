@@ -166,7 +166,7 @@ export default function Calculator() {
         showBackButton={true}
       >
         {/* Mode Selector */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
           <p className="text-xs text-gray-500 mb-2">Discipline Mode</p>
           <div className="flex gap-2">
             {MODES.map(mode => (
@@ -383,13 +383,13 @@ export default function Calculator() {
 
             {/* Bucket Selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-base font-medium text-gray-700 mb-2.5">
                 Select Bucket
               </label>
               <select
                 value={selectedBucketId}
                 onChange={(e) => setSelectedBucketId(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-gray-50 hover:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 px-4 py-4 text-lg min-h-[52px] bg-gray-50 hover:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
               >
                 <option value="">Select a bucket</option>
                 {availableBuckets.map(bucket => {

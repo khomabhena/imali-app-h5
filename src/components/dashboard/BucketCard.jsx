@@ -13,19 +13,19 @@ export default function BucketCard({ bucket, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all text-left active:scale-[0.98]"
+      className="w-full bg-white rounded-xl p-5 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all text-left active:scale-[0.98] min-h-[120px]"
     >
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-4">
         <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0"
+          className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl shrink-0"
           style={{ backgroundColor: colors.main }}
         >
           {bucket.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 text-sm truncate">{bucket.name}</h3>
+          <h3 className="font-semibold text-gray-900 text-base truncate">{bucket.name}</h3>
           {bucket.allocationPct > 0 && (
-            <p className="text-xs text-gray-500">{bucket.allocationPct}% allocation</p>
+            <p className="text-sm text-gray-500 mt-0.5">{bucket.allocationPct}% allocation</p>
           )}
         </div>
       </div>
@@ -35,7 +35,7 @@ export default function BucketCard({ bucket, onClick }) {
           {formatCurrency(bucket.balance)}
         </p>
         {!isPositive && (
-          <p className="text-xs text-red-600 mt-1">Low balance</p>
+          <p className="text-sm text-red-600 mt-1.5">Low balance</p>
         )}
       </div>
     </button>

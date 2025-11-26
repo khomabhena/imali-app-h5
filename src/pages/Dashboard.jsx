@@ -75,38 +75,38 @@ export default function Dashboard() {
       {/* Content Section */}
       <div className="max-w-md mx-auto px-4 -mt-4">
             {/* Quick Actions - At the Top */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-8">
               <button
                 onClick={() => navigate('/income')}
-                className="bg-white rounded-xl p-5 border-2 border-dashed border-gray-300 hover:border-teal-500 transition-colors flex flex-col items-center justify-center gap-2.5"
+                className="bg-white rounded-xl p-6 border-2 border-dashed border-gray-300 hover:border-teal-500 transition-colors flex flex-col items-center justify-center gap-3 min-h-[120px]"
               >
-                <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
-                  <PlusIcon className="w-6 h-6 text-teal-600" />
+                <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center">
+                  <PlusIcon className="w-7 h-7 text-teal-600" />
                 </div>
-                <p className="text-sm font-medium text-gray-700">Add Income</p>
+                <p className="text-base font-medium text-gray-700">Add Income</p>
               </button>
               
               <button
                 onClick={() => navigate('/purchase')}
-                className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl p-5 text-white hover:from-teal-600 hover:to-teal-700 transition-all flex flex-col items-center justify-center gap-2.5 shadow-lg shadow-teal-500/30"
+                className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl p-6 text-white hover:from-teal-600 hover:to-teal-700 transition-all flex flex-col items-center justify-center gap-3 shadow-lg shadow-teal-500/30 min-h-[120px]"
               >
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                  <CreditCardIcon className="w-6 h-6" />
+                <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+                  <CreditCardIcon className="w-7 h-7" />
                 </div>
-                <p className="text-sm font-semibold">Record Purchase</p>
+                <p className="text-base font-semibold">Record Purchase</p>
               </button>
             </div>
 
             {/* Buckets Section */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Buckets</h2>
-            <button className="text-sm text-teal-600 font-medium hover:text-teal-700 transition-colors">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-semibold text-gray-900">Buckets</h2>
+            <button className="text-base text-teal-600 font-medium hover:text-teal-700 transition-colors py-2 px-3 min-h-[44px]">
               View all
             </button>
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {bucketsWithBalances.map((bucket) => (
               <BucketCard
                 key={bucket.id}

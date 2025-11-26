@@ -62,7 +62,7 @@ export default function PageLayout({
       </div>
 
       {/* Content Section */}
-      <div className="max-w-md mx-auto px-4 -mt-4">
+      <div className="max-w-md mx-auto px-4 -mt-4 pb-6">
         {children}
       </div>
     </>

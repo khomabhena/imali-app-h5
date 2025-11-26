@@ -24,7 +24,7 @@ export default function Input({
       {label && (
         <label
           htmlFor={name}
-          className="block text-sm font-medium text-gray-700 mb-2"
+          className="block text-base font-medium text-gray-700 mb-2.5"
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
@@ -51,7 +51,7 @@ export default function Input({
             w-full rounded-lg border transition-all duration-200
             ${Icon ? 'pl-10' : 'pl-3'}
             ${RightIcon ? 'pr-10' : 'pr-3'}
-            py-3 text-gray-900 placeholder-gray-400 text-base
+            py-4 text-gray-900 placeholder-gray-400 text-lg min-h-[52px]
             ${error
               ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50/50'
               : 'border-gray-200 focus:border-teal-500 focus:ring-teal-500/20 bg-gray-50 hover:bg-white hover:border-gray-300'
@@ -76,11 +76,11 @@ export default function Input({
       </div>
       
       {error && (
-        <p className="mt-1.5 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-base text-red-600">{error}</p>
       )}
       
       {helperText && !error && (
-        <p className="mt-1.5 text-sm text-gray-500">{helperText}</p>
+        <p className="mt-2 text-base text-gray-500">{helperText}</p>
       )}
     </div>
   );
