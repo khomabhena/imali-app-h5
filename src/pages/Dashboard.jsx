@@ -98,7 +98,7 @@ export default function Dashboard() {
             </div>
 
             {/* Buckets Section */}
-        <div>
+        <div className="pb-32">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-semibold text-gray-900">Buckets</h2>
             <button className="text-base text-teal-600 font-medium hover:text-teal-700 transition-colors py-2 px-3 min-h-[44px]">

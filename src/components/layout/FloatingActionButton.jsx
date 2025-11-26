@@ -15,7 +15,7 @@ export default function FloatingActionButton() {
   }
 
   return (
-    <div className="fixed bottom-24 left-0 right-0 z-40 pointer-events-none">
+    <div className="fixed bottom-28 left-0 right-0 z-40 pointer-events-none">
       <div className="max-w-md mx-auto px-4 relative">
         <button
           onClick={() => navigate('/calculator')}
