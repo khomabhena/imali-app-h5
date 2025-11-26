@@ -5,7 +5,7 @@
 import { formatCurrency, formatDate } from '../../data/mockData';
 
 export default function TransactionItem({ transaction }) {
-  const isExpense = transaction.type === 'expense';270
+  const isExpense = transaction.type === 'expense';
   const amountColor = isExpense ? 'text-red-600' : 'text-green-600';
   const sign = isExpense ? '-' : '+';
   
@@ -21,16 +21,16 @@ export default function TransactionItem({ transaction }) {
         </div>
         <div>
           <p className="font-medium text-gray-900 text-sm">
-            {transaction.itemName || transaction.note || transaction.type}
+            {transaction.item_name || transaction.note || transaction.type}
           </p>
           <p className="text-xs text-gray-500">
             {formatDate(transaction.date)}
-            {transaction.bucketName && ` • ${transaction.bucketName}`}
+            {transaction.bucket?.name && ` • ${transaction.bucket.name}`}
           </p>
         </div>
       </div>
       <p className={`font-semibold ${amountColor}`}>
-        {sign}{formatCurrency(Math.abs(transaction.amount))}
+        {sign}{formatCurrency(Math.abs(transaction.amount), transaction.currency_code)}
       </p>
     </div>
   );

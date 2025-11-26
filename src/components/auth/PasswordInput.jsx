@@ -15,9 +15,18 @@ export default function PasswordInput({
   error,
   required = false,
   showToggle = true,
+  autoComplete,
   ...props
 }) {
   const [showPassword, setShowPassword] = useState(false);
+
+  // Determine autocomplete value if not provided
+  const getAutoComplete = () => {
+    if (autoComplete) return autoComplete;
+    if (name === 'password' || name === 'newPassword') return 'current-password';
+    if (name === 'confirmPassword') return 'new-password';
+    return 'current-password';
+  };
 
   return (
     <Input
@@ -29,6 +38,7 @@ export default function PasswordInput({
       placeholder={placeholder}
       error={error}
       required={required}
+      autoComplete={getAutoComplete()}
       rightIcon={showToggle ? (showPassword ? EyeSlashIcon : EyeIcon) : undefined}
       onRightIconClick={showToggle ? () => setShowPassword(!showPassword) : undefined}
       {...props}

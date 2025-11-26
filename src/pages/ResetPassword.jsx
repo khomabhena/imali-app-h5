@@ -205,11 +205,12 @@ export default function ResetPassword() {
           <div className="space-y-4">
             <PasswordInput
               label="New Password"
-              name="password"
+              name="newPassword"
               value={formData.password}
               onChange={handleChange}
               required
               error={errors.password}
+              autoComplete="new-password"
             />
 
             {formData.password && (
@@ -223,6 +224,7 @@ export default function ResetPassword() {
               onChange={handleChange}
               required
               error={errors.confirmPassword}
+              autoComplete="new-password"
             />
           </div>
 

@@ -3,12 +3,13 @@
  * Reusable layout for pages with teal gradient header and content section
  */
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 export default function PageLayout({
   title,
   subtitle,
   showBackButton = false,
+  showSettingsButton = true,
   onBack,
   children,
   headerContent,
@@ -44,6 +45,15 @@ export default function PageLayout({
                 <p className="text-sm text-teal-100">{subtitle}</p>
               )}
             </div>
+            {showSettingsButton && (
+              <button
+                onClick={() => navigate('/settings')}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                aria-label="Settings"
+              >
+                <Cog6ToothIcon className="w-6 h-6 text-white" />
+              </button>
+            )}
             {headerContent && (
               <div>{headerContent}</div>
             )}

@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { mockBuckets, mockActiveExpenses, mockSettings, formatCurrency } from '../data/mockData';
+import { useBuckets } from '../hooks/useBuckets';
+import { useExpenses } from '../hooks/useExpenses';
+import { useSettings } from '../hooks/useSettings';
+import { useAuth } from '../contexts/AuthContext';
+import { recordIncome } from '../services/incomeService';
+import { formatCurrency } from '../data/mockData';
 import { CurrencyDollarIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 const CURRENCIES = [
@@ -16,24 +21,36 @@ const CURRENCIES = [
 
 export default function Income() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { buckets, loading: bucketsLoading } = useBuckets();
+  const { settings, loading: settingsLoading } = useSettings();
+  const { expenses, loading: expensesLoading } = useExpenses({ active: 'active' });
   const [formData, setFormData] = useState({
     amount: '',
-    currency: mockSettings.defaultCurrency,
+    currency: settings?.default_currency || 'USD',
     date: new Date().toISOString().split('T')[0],
     source: '',
     note: '',
   });
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+
+  // Update currency when settings load
+  useEffect(() => {
+    if (settings?.default_currency) {
+      setFormData(prev => ({ ...prev, currency: settings.default_currency }));
+    }
+  }, [settings]);
 
   // Calculate allocation preview
   const amount = parseFloat(formData.amount) || 0;
-  const activeExpensesTotal = mockActiveExpenses
-    .filter(exp => exp.active && exp.currency === formData.currency)
-    .reduce((sum, exp) => sum + exp.amount, 0);
+  const activeExpensesTotal = expenses
+    .filter(exp => exp.active && exp.currency_code === formData.currency)
+    .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
   const netAfterExpenses = Math.max(0, amount - activeExpensesTotal);
   
   // Allocation: Necessity gets 60%, others get 10% each (excluding Savings)
-  const allocationBuckets = mockBuckets.filter(b => b.name !== 'Savings');
+  const allocationBuckets = buckets.filter(b => b.name !== 'Savings');
   const necessityBucket = allocationBuckets.find(b => b.name === 'Necessity');
   const otherBuckets = allocationBuckets.filter(b => b.name !== 'Necessity');
   
@@ -66,15 +83,56 @@ export default function Income() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      // TODO: Submit to backend
-      console.log('Income recorded:', formData);
-      // Navigate back to dashboard
+    if (!validate() || !user) return;
+
+    setSubmitting(true);
+    setErrors({});
+
+    try {
+      const { data, error } = await recordIncome({
+        userId: user.id,
+        amount: parseFloat(formData.amount),
+        currency: formData.currency,
+        date: new Date(formData.date).toISOString(),
+        note: formData.note,
+        source: formData.source,
+      });
+
+      if (error) {
+        setErrors({ submit: error.message || 'Failed to record income' });
+        setSubmitting(false);
+        return;
+      }
+
+      // Success - navigate to dashboard
       navigate('/dashboard');
+    } catch (err) {
+      console.error('Error recording income:', err);
+      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
+      setSubmitting(false);
     }
   };
+
+  if (bucketsLoading || settingsLoading || expensesLoading) {
+    return (
+      <AppLayout>
+        <PageLayout
+          title="Add Income"
+          subtitle="Record your income and see how it will be allocated"
+          showBackButton={true}
+        >
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
+              <p className="text-sm text-gray-600">Loading...</p>
+            </div>
+          </div>
+        </PageLayout>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -84,6 +142,11 @@ export default function Income() {
         showBackButton={true}
       >
         <form onSubmit={handleSubmit} className="pb-6">
+          {errors.submit && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-red-600">{errors.submit}</p>
+            </div>
+          )}
           {/* Form Fields Card */}
           <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
             <div className="space-y-4">
@@ -293,9 +356,9 @@ export default function Income() {
               type="submit"
               variant="primary"
               size="full"
-              disabled={!amount || amount <= 0}
+              disabled={!amount || amount <= 0 || submitting}
             >
-              Record Income
+              {submitting ? 'Recording Income...' : 'Record Income'}
             </Button>
           </div>
         </form>

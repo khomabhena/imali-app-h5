@@ -207,3 +207,67 @@ export const formatDate = (dateString, locale = 'en-US') => {
   }).format(date);
 };
 
+// Mock wishlist items
+export const mockWishlistItems = [
+  {
+    id: '1',
+    name: 'MacBook Pro 16"',
+    amount: 2499,
+    currency: 'USD',
+    bucketId: '2', // Investment
+    bucketName: 'Investment',
+    priority: 1, // High priority
+    note: 'For work and development',
+    createdAt: '2025-11-10T10:00:00Z',
+    category: 'Electronics'
+  },
+  {
+    id: '2',
+    name: 'AirPods Pro',
+    amount: 249,
+    currency: 'USD',
+    bucketId: '5', // Fun
+    bucketName: 'Fun',
+    priority: 2, // Medium priority
+    note: 'For better audio experience',
+    createdAt: '2025-11-12T14:30:00Z',
+    category: 'Electronics'
+  },
+  {
+    id: '3',
+    name: 'Online Course Bundle',
+    amount: 199,
+    currency: 'USD',
+    bucketId: '3', // Learning
+    bucketName: 'Learning',
+    priority: 1, // High priority
+    note: 'Advanced React and Node.js courses',
+    createdAt: '2025-11-08T09:00:00Z',
+    category: 'Education'
+  },
+  {
+    id: '4',
+    name: 'Gym Membership',
+    amount: 50,
+    currency: 'USD',
+    bucketId: '1', // Necessity
+    bucketName: 'Necessity',
+    priority: 2, // Medium priority
+    note: 'Monthly gym membership',
+    createdAt: '2025-11-15T16:00:00Z',
+    category: 'Health'
+  },
+  {
+    id: '5',
+    name: 'Weekend Trip',
+    amount: 500,
+    currency: 'USD',
+    bucketId: '5', // Fun
+    bucketName: 'Fun',
+    priority: 3, // Low priority
+    note: 'Beach weekend getaway',
+    createdAt: '2025-11-05T11:00:00Z',
+    category: 'Travel'
+  },
+];
+

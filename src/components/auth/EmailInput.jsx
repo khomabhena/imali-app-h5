@@ -9,6 +9,7 @@ export default function EmailInput({
   onChange,
   error,
   required = true,
+  autoComplete = 'email',
   ...props
 }) {
   return (
@@ -21,6 +22,7 @@ export default function EmailInput({
       placeholder="you@example.com"
       error={error}
       required={required}
+      autoComplete={autoComplete}
       {...props}
     />
   );

@@ -118,11 +118,13 @@ export default function SignUp() {
             <div>
               <PasswordInput
                 label="Password"
+                name="password"
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
                 placeholder="Enter your password"
                 showToggle={true}
+                autoComplete="new-password"
               />
               <PasswordStrength password={formData.password} />
             </div>
@@ -134,6 +136,7 @@ export default function SignUp() {
               onChange={handleChange}
               error={errors.confirmPassword}
               placeholder="Enter your password"
+              autoComplete="new-password"
             />
           </div>
         </div>

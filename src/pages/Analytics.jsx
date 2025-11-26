@@ -2,86 +2,174 @@
  * Analytics Page
  * Spending insights and visualizations
  */
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
-import { mockTransactions, mockBuckets, mockSettings, formatCurrency } from '../data/mockData';
+import { useTransactions } from '../hooks/useTransactions';
+import { useBuckets } from '../hooks/useBuckets';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../data/mockData';
+import { getBucketColor } from '../data/colors';
 import { ChartBarIcon, CurrencyDollarIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline';
 
 export default function Analytics() {
+  const { settings, loading: settingsLoading } = useSettings();
+  const { buckets, loading: bucketsLoading } = useBuckets();
+  const currency = settings?.default_currency || 'USD';
   const [timePeriod, setTimePeriod] = useState('thisMonth');
-  const [currency, setCurrency] = useState(mockSettings.defaultCurrency);
+  const [selectedCurrency, setSelectedCurrency] = useState(currency);
+
+  // Update selectedCurrency when settings load
+  useEffect(() => {
+    if (settings?.default_currency && selectedCurrency !== settings.default_currency) {
+      setSelectedCurrency(settings.default_currency);
+    }
+  }, [settings?.default_currency, selectedCurrency]);
+
+  // Calculate date range based on time period - memoized to prevent re-renders
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    // Use start of today as end date for stability (prevents re-renders every millisecond)
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    switch (timePeriod) {
+      case 'thisMonth':
+        return { start: startOfMonth, end: endOfToday };
+      case 'lastMonth':
+        return { start: startOfLastMonth, end: endOfLastMonth };
+      case 'thisYear':
+        return { start: startOfYear, end: endOfToday };
+      case 'all':
+      default:
+        return { start: null, end: null };
+    }
+  }, [timePeriod]);
+
+  // Memoize ISO strings to prevent unnecessary re-fetches
+  const startDateISO = useMemo(() => dateRange.start?.toISOString(), [dateRange.start]);
+  const endDateISO = useMemo(() => dateRange.end?.toISOString(), [dateRange.end]);
+
+  const { transactions, loading: transactionsLoading } = useTransactions({
+    currency: selectedCurrency,
+    startDate: startDateISO,
+    endDate: endDateISO,
+  });
 
   // Filter transactions by currency and time period
-  const filteredTransactions = mockTransactions.filter(t => t.currency === currency);
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      // Currency filter is already applied by the hook
+      // Additional filtering if needed
+      return true;
+    });
+  }, [transactions]);
 
   // Calculate summary
-  const totalIncome = filteredTransactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const { totalIncome, totalExpenses, netBalance } = useMemo(() => {
+    const income = filteredTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
 
-  const totalExpenses = Math.abs(filteredTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0));
+    const expenses = Math.abs(filteredTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0));
 
-  const netBalance = totalIncome - totalExpenses;
+    return {
+      totalIncome: income,
+      totalExpenses: expenses,
+      netBalance: income - expenses,
+    };
+  }, [filteredTransactions]);
 
   // Calculate per-item spend
-  const itemSpend = filteredTransactions
-    .filter(t => t.type === 'expense' && t.itemName)
-    .reduce((acc, t) => {
-      const key = t.itemName;
-      if (!acc[key]) {
-        acc[key] = {
-          name: key,
-          total: 0,
-          count: 0,
-          bucket: t.bucketName,
-          category: t.category,
-        };
-      }
-      acc[key].total += Math.abs(t.amount);
-      acc[key].count += 1;
-      return acc;
-    }, {});
+  const topItems = useMemo(() => {
+    const itemSpend = filteredTransactions
+      .filter(t => t.type === 'expense' && t.item_name)
+      .reduce((acc, t) => {
+        const key = t.item_name;
+        if (!acc[key]) {
+          acc[key] = {
+            name: key,
+            total: 0,
+            count: 0,
+            bucket: t.bucket?.name || 'Unknown',
+            category: t.category || '',
+          };
+        }
+        acc[key].total += Math.abs(parseFloat(t.amount || 0));
+        acc[key].count += 1;
+        return acc;
+      }, {});
 
-  const topItems = Object.values(itemSpend)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
+    return Object.values(itemSpend)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [filteredTransactions]);
 
   // Calculate per-bucket spending
-  const bucketSpending = filteredTransactions
-    .filter(t => t.type === 'expense' && t.bucketId)
-    .reduce((acc, t) => {
-      const bucketName = t.bucketName || 'Unknown';
-      if (!acc[bucketName]) {
-        acc[bucketName] = {
-          name: bucketName,
-          total: 0,
-          color: mockBuckets.find(b => b.name === bucketName)?.color || '#64748b',
-        };
-      }
-      acc[bucketName].total += Math.abs(t.amount);
-      return acc;
-    }, {});
+  const bucketSpendingArray = useMemo(() => {
+    const bucketSpending = filteredTransactions
+      .filter(t => t.type === 'expense' && t.bucket_id)
+      .reduce((acc, t) => {
+        const bucket = buckets.find(b => b.id === t.bucket_id);
+        const bucketName = bucket?.name || 'Unknown';
+        if (!acc[bucketName]) {
+          const bucketColor = bucket?.color || getBucketColor(bucketName).main || '#64748b';
+          acc[bucketName] = {
+            name: bucketName,
+            total: 0,
+            color: bucketColor,
+          };
+        }
+        acc[bucketName].total += Math.abs(parseFloat(t.amount || 0));
+        return acc;
+      }, {});
 
-  const bucketSpendingArray = Object.values(bucketSpending)
-    .sort((a, b) => b.total - a.total);
+    return Object.values(bucketSpending)
+      .sort((a, b) => b.total - a.total);
+  }, [filteredTransactions, buckets]);
 
   // Get top spending category
-  const categorySpend = filteredTransactions
-    .filter(t => t.type === 'expense' && t.category)
-    .reduce((acc, t) => {
-      const category = t.category;
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      acc[category] += Math.abs(t.amount);
-      return acc;
-    }, {});
+  const topCategory = useMemo(() => {
+    const categorySpend = filteredTransactions
+      .filter(t => t.type === 'expense' && t.category)
+      .reduce((acc, t) => {
+        const category = t.category;
+        if (!acc[category]) {
+          acc[category] = 0;
+        }
+        acc[category] += Math.abs(parseFloat(t.amount || 0));
+        return acc;
+      }, {});
 
-  const topCategory = Object.entries(categorySpend)
-    .sort(([, a], [, b]) => b - a)[0];
+    const entries = Object.entries(categorySpend)
+      .sort(([, a], [, b]) => b - a);
+    return entries[0] || null;
+  }, [filteredTransactions]);
+
+  // Loading state
+  if (settingsLoading || bucketsLoading || transactionsLoading) {
+    return (
+      <AppLayout>
+        <PageLayout
+          title="Analytics"
+          subtitle="Spending insights and visualizations"
+          showBackButton={true}
+        >
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
+              <p className="text-sm text-gray-600">Loading analytics...</p>
+            </div>
+          </div>
+        </PageLayout>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -116,8 +204,8 @@ export default function Analytics() {
             <div>
               <p className="text-xs text-gray-500 mb-2">Currency</p>
               <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-gray-50 hover:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
               >
                 <option value="USD">USD</option>
@@ -139,7 +227,7 @@ export default function Analytics() {
               <p className="text-xs text-gray-500">Total Income</p>
             </div>
             <p className="text-lg font-bold text-gray-900">
-              {formatCurrency(totalIncome, currency)}
+              {formatCurrency(totalIncome, selectedCurrency)}
             </p>
           </div>
 
@@ -151,7 +239,7 @@ export default function Analytics() {
               <p className="text-xs text-gray-500">Total Expenses</p>
             </div>
             <p className="text-lg font-bold text-gray-900">
-              {formatCurrency(totalExpenses, currency)}
+              {formatCurrency(totalExpenses, selectedCurrency)}
             </p>
           </div>
 
@@ -165,7 +253,7 @@ export default function Analytics() {
             <p className={`text-lg font-bold ${
               netBalance >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
-              {formatCurrency(netBalance, currency)}
+              {formatCurrency(netBalance, selectedCurrency)}
             </p>
           </div>
 
@@ -181,7 +269,7 @@ export default function Analytics() {
             </p>
             {topCategory && (
               <p className="text-xs text-gray-500 mt-1">
-                {formatCurrency(topCategory[1], currency)}
+                {formatCurrency(topCategory[1], selectedCurrency)}
               </p>
             )}
           </div>
@@ -210,7 +298,7 @@ export default function Analytics() {
                           <span className="text-sm text-gray-700">{bucket.name}</span>
                         </div>
                         <span className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(bucket.total, currency)}
+                          {formatCurrency(bucket.total, selectedCurrency)}
                         </span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-2">
@@ -247,7 +335,7 @@ export default function Analytics() {
                       <span className="text-sm font-semibold text-gray-900">{item.name}</span>
                     </div>
                     <span className="text-sm font-bold text-gray-900">
-                      {formatCurrency(item.total, currency)}
+                      {formatCurrency(item.total, selectedCurrency)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500 ml-8">

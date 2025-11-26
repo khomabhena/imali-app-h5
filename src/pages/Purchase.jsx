@@ -1,36 +1,47 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import { useBuckets } from '../hooks/useBuckets';
+import { useBalances } from '../hooks/useBalances';
+import { useSettings } from '../hooks/useSettings';
+import { useAuth } from '../contexts/AuthContext';
+import { recordPurchase } from '../services/purchaseService';
 import { 
-  mockBuckets, 
-  mockSettings, 
-  mockActiveExpenses,
   formatCurrency, 
   checkAffordability,
   calculateMaxAffordable,
   getLimiter
 } from '../data/mockData';
-import { CurrencyDollarIcon, CalendarIcon, ExclamationTriangleIcon, CheckCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { CurrencyDollarIcon, CalendarIcon, ExclamationTriangleIcon, CheckCircleIcon, ArrowLeftIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
 
 export default function Purchase() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { buckets, loading: bucketsLoading } = useBuckets();
+  const { settings } = useSettings();
+  const currency = settings?.default_currency || 'USD';
+  const { balances, getBalanceByBucket } = useBalances(currency);
+  const prefillData = location.state?.prefill;
+
   const [formData, setFormData] = useState({
-    amount: '',
-    bucketId: '',
-    itemName: '',
-    category: '',
+    amount: prefillData?.amount?.toString() || '',
+    bucketId: prefillData?.bucketId || '',
+    itemName: prefillData?.itemName || '',
+    category: prefillData?.category || '',
     date: new Date().toISOString().split('T')[0],
-    note: '',
+    note: prefillData?.note || '',
   });
   const [errors, setErrors] = useState({});
   const [isDailyExpense, setIsDailyExpense] = useState(false);
   const [dailyAmount, setDailyAmount] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Get available buckets (exclude Savings)
-  const availableBuckets = mockBuckets.filter(b => b.name !== 'Savings');
+  const availableBuckets = buckets.filter(b => b.name !== 'Savings');
   const selectedBucket = availableBuckets.find(b => b.id === formData.bucketId);
   
   // Calculate days remaining in current month
@@ -47,13 +58,14 @@ export default function Purchase() {
 
   // Calculate affordability
   const amount = isDailyExpense ? monthlyTotal : (parseFloat(formData.amount) || 0);
+  const bucketBalance = selectedBucket ? getBalanceByBucket(selectedBucket.id) : 0;
   let affordability = null;
   if (selectedBucket && amount > 0) {
     affordability = checkAffordability(
       amount,
-      selectedBucket.balance,
+      bucketBalance,
       selectedBucket.name,
-      mockSettings.mode
+      settings?.default_mode || 'intermediate'
     );
   }
 
@@ -129,6 +141,19 @@ export default function Purchase() {
     ? 'bg-gradient-to-br from-red-600 to-red-700'
     : 'bg-gradient-to-br from-teal-500 to-teal-600';
 
+  if (bucketsLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
+            <p className="text-sm text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div>
@@ -144,7 +169,15 @@ export default function Purchase() {
                 <ArrowLeftIcon className="w-6 h-6 text-white" />
               </button>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-white">Record Purchase</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold text-white">Record Purchase</h1>
+                  {prefillData && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-white/20 rounded-lg">
+                      <ShoppingBagIcon className="w-4 h-4" />
+                      <span className="text-xs font-medium">From Wishlist</span>
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-white/80">Record a purchase and check affordability</p>
               </div>
             </div>
@@ -180,7 +213,7 @@ export default function Purchase() {
                   <option value="">Select a bucket</option>
                   {availableBuckets.map(bucket => (
                     <option key={bucket.id} value={bucket.id}>
-                      {bucket.name} ({formatCurrency(bucket.balance)})
+                      {bucket.name} ({formatCurrency(getBalanceByBucket(bucket.id), currency)})
                     </option>
                   ))}
                 </select>
@@ -253,7 +286,7 @@ export default function Purchase() {
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Daily amount:</span>
-                          <span className="font-medium text-gray-900">{formatCurrency(dailyAmountValue)}</span>
+                          <span className="font-medium text-gray-900">{formatCurrency(dailyAmountValue, currency)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Days remaining:</span>
@@ -261,7 +294,7 @@ export default function Purchase() {
                         </div>
                         <div className="flex justify-between pt-1 border-t border-teal-200">
                           <span className="font-medium text-gray-900">Total cost:</span>
-                          <span className="font-semibold text-teal-600">{formatCurrency(monthlyTotal)}</span>
+                          <span className="font-semibold text-teal-600">{formatCurrency(monthlyTotal, currency)}</span>
                         </div>
                       </div>
                     </div>
@@ -366,25 +399,25 @@ export default function Purchase() {
                       <div className="flex justify-between">
                         <span className="text-gray-600">Bucket Balance</span>
                         <span className="font-medium text-gray-900">
-                          {formatCurrency(selectedBucket.balance)}
+                          {formatCurrency(bucketBalance, currency)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Purchase Amount</span>
                         <span className="font-medium text-gray-900">
-                          {formatCurrency(amount)}
+                          {formatCurrency(amount, currency)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Remaining After Purchase</span>
                         <span className="font-medium text-gray-900">
-                          {formatCurrency(selectedBucket.balance - amount)}
+                          {formatCurrency(bucketBalance - amount, currency)}
                         </span>
                       </div>
                       <div className="flex justify-between pt-2 border-t border-gray-100">
                         <span className="text-gray-600">Mode</span>
                         <span className="font-medium text-gray-900">
-                          {modeLabels[mockSettings.mode]} (×{affordability.limiter})
+                          {modeLabels[settings?.default_mode || 'intermediate']} (×{affordability.limiter})
                         </span>
                       </div>
                     </div>
@@ -401,20 +434,20 @@ export default function Purchase() {
                         <div className="flex justify-between text-sm">
                           <span className="text-red-700">You need a balance of</span>
                           <span className="font-semibold text-red-900">
-                            {formatCurrency(affordability.requiredBalance)}
+                            {formatCurrency(affordability.requiredBalance, currency)}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-red-700">You only have</span>
                           <span className="font-semibold text-red-900">
-                            {formatCurrency(selectedBucket.balance)}
+                            {formatCurrency(bucketBalance, currency)}
                           </span>
                         </div>
                         {(() => {
                           // Step 1: Calculate how much additional balance is needed in this bucket
                           // Required balance = amount × limiter (what you need to afford the purchase)
                           // Current balance = what you currently have
-                          const additionalBalanceNeeded = affordability.requiredBalance - selectedBucket.balance;
+                          const additionalBalanceNeeded = affordability.requiredBalance - bucketBalance;
                           
                           // If already have enough, no income needed
                           if (additionalBalanceNeeded <= 0) {
@@ -426,19 +459,15 @@ export default function Purchase() {
                           const allocationPct = selectedBucket.name === 'Necessity' ? 0.6 : 0.1;
                           const netIncomeNeeded = additionalBalanceNeeded / allocationPct;
                           
-                          // Step 3: Add active expenses to get gross income needed
-                          // Income flow: Gross Income - Expenses = Net Income → Allocations
-                          const activeExpensesTotal = mockActiveExpenses
-                            .filter(exp => exp.active && exp.currency === 'USD')
-                            .reduce((sum, exp) => sum + exp.amount, 0);
-                          
-                          const grossIncomeNeeded = netIncomeNeeded + activeExpensesTotal;
+                          // Note: Active expenses calculation would require useExpenses hook
+                          // For now, we'll show the net income needed
+                          // TODO: Add useExpenses hook to calculate active expenses total
                           
                           return (
                             <div className="flex justify-between text-sm">
                               <span className="text-red-700">You need an Income of</span>
                               <span className="font-semibold text-red-900">
-                                {formatCurrency(grossIncomeNeeded)}
+                                {formatCurrency(netIncomeNeeded, currency)}
                               </span>
                             </div>
                           );
@@ -449,7 +478,7 @@ export default function Purchase() {
                       <div className="bg-white p-3 rounded border border-red-200 mb-3">
                         <p className="text-xs text-gray-600 mb-1">You can afford up to:</p>
                         <p className="text-lg font-bold text-red-600">
-                          {formatCurrency(affordability.maxAffordable)}
+                          {formatCurrency(affordability.maxAffordable, currency)}
                         </p>
                       </div>
 
@@ -472,10 +501,11 @@ export default function Purchase() {
                         {availableBuckets
                           .filter(b => b.id !== formData.bucketId)
                           .map(bucket => {
+                            const otherBucketBalance = getBalanceByBucket(bucket.id);
                             const maxAffordable = calculateMaxAffordable(
-                              bucket.balance,
+                              otherBucketBalance,
                               bucket.name,
-                              mockSettings.mode
+                              settings?.default_mode || 'intermediate'
                             );
                             return (
                               <div
@@ -493,8 +523,8 @@ export default function Purchase() {
                                   <span className="text-sm text-gray-700">{bucket.name}</span>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-xs text-gray-500 block">Max: {formatCurrency(maxAffordable)}</span>
-                                  <span className="text-xs text-gray-400">Balance: {formatCurrency(bucket.balance)}</span>
+                                  <span className="text-xs text-gray-500 block">Max: {formatCurrency(maxAffordable, currency)}</span>
+                                  <span className="text-xs text-gray-400">Balance: {formatCurrency(otherBucketBalance, currency)}</span>
                                 </div>
                               </div>
                             );
@@ -517,13 +547,21 @@ export default function Purchase() {
             >
               Cancel
             </Button>
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-red-600">{errors.submit}</p>
+              </div>
+            )}
             <Button
               type="submit"
               variant="primary"
               size="full"
-              disabled={!amount || amount <= 0 || (affordability && !affordability.isAffordable)}
+              disabled={!amount || amount <= 0 || (affordability && !affordability.isAffordable) || submitting}
             >
-              {isDailyExpense ? 'Check Affordability' : 'Record Purchase'}
+              {submitting 
+                ? 'Recording Purchase...' 
+                : (isDailyExpense ? 'Check Affordability' : 'Record Purchase')
+              }
             </Button>
           </div>
         </form>

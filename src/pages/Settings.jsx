@@ -2,11 +2,12 @@
  * Settings Page
  * Mode selection, currency preferences, profile settings
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
-import { mockSettings, mockModeLimiters } from '../data/mockData';
+import { useSettings } from '../hooks/useSettings';
+import { useBuckets } from '../hooks/useBuckets';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   CheckCircleIcon, 
@@ -52,20 +53,48 @@ const BUCKET_NAMES = ['Necessity', 'Investment', 'Learning', 'Emergency', 'Fun']
 export default function Settings() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const [mode, setMode] = useState(mockSettings.mode);
-  const [currency, setCurrency] = useState(mockSettings.defaultCurrency);
+  const { settings, loading: settingsLoading, updateSettings } = useSettings();
+  const { buckets, loading: bucketsLoading } = useBuckets();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleModeChange = (newMode) => {
-    setMode(newMode);
-    // TODO: Update in backend
-    console.log('Mode changed to:', newMode);
+  const mode = settings?.default_mode || 'intermediate';
+  const currency = settings?.default_currency || 'USD';
+
+  // Get limiters from buckets
+  const getLimiters = (modeId) => {
+    if (!buckets.length) return {};
+    const limiters = {};
+    buckets.forEach(bucket => {
+      if (bucket.name !== 'Savings') {
+        limiters[bucket.name] = modeId === 'light' 
+          ? bucket.limiter_light 
+          : modeId === 'intermediate' 
+          ? bucket.limiter_intermediate 
+          : bucket.limiter_strict;
+      }
+    });
+    return limiters;
   };
 
-  const handleCurrencyChange = (newCurrency) => {
-    setCurrency(newCurrency);
-    // TODO: Update in backend
-    console.log('Currency changed to:', newCurrency);
+  const handleModeChange = async (newMode) => {
+    setSaving(true);
+    const { error } = await updateSettings({ default_mode: newMode });
+    if (error) {
+      console.error('Failed to update mode:', error);
+      // You could show an error toast here
+    }
+    setSaving(false);
+  };
+
+  const handleCurrencyChange = async (newCurrency) => {
+    setSaving(true);
+    const { error } = await updateSettings({ default_currency: newCurrency });
+    if (error) {
+      console.error('Failed to update currency:', error);
+      // You could show an error toast here
+    }
+    setSaving(false);
   };
 
   const handleLogout = async () => {
@@ -76,12 +105,33 @@ export default function Settings() {
     }
   };
 
+  if (settingsLoading || bucketsLoading) {
+    return (
+      <AppLayout>
+        <PageLayout
+          title="Settings"
+          subtitle="Mode, currency, and profile preferences"
+          showBackButton={true}
+          showSettingsButton={false}
+        >
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
+              <p className="text-sm text-gray-600">Loading settings...</p>
+            </div>
+          </div>
+        </PageLayout>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <PageLayout
         title="Settings"
         subtitle="Mode, currency, and profile preferences"
         showBackButton={true}
+        showSettingsButton={false}
       >
         {/* Mode Selection */}
         <div className="bg-white rounded-xl border border-gray-200 mb-4">
@@ -94,7 +144,7 @@ export default function Settings() {
           <div className="p-4 space-y-3">
             {MODES.map((modeOption) => {
               const isSelected = mode === modeOption.id;
-              const limiters = mockModeLimiters[modeOption.id];
+              const limiters = getLimiters(modeOption.id);
               
               return (
                 <button

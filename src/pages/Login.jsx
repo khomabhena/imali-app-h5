@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import PageLayout from '../components/layout/PageLayout';
 import ErrorMessage from '../components/auth/ErrorMessage';
 import EmailInput from '../components/auth/EmailInput';
@@ -12,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn, signInWithOAuth, user } = useAuth();
   const { formData, errors, loading, setErrors, setLoading, handleChange, validate } = useForm(
     { email: '', password: '' },
@@ -24,6 +26,15 @@ export default function Login() {
       return newErrors;
     }
   );
+
+  // Check for OAuth error from callback
+  useEffect(() => {
+    if (location.state?.error) {
+      setErrors({ submit: location.state.error });
+      // Clear the error from location state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate, setErrors]);
 
   // Redirect if already logged in
   if (user) {
@@ -102,12 +113,13 @@ export default function Login() {
               error={errors.email}
             />
 
-            <PasswordInput
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-              placeholder="Enter your password"
-            />
+                <PasswordInput
+                  value={formData.password}
+                  onChange={handleChange}
+                  error={errors.password}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                />
 
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center">

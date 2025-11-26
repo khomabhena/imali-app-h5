@@ -11,8 +11,11 @@ import Purchase from './pages/Purchase';
 import Transactions from './pages/Transactions';
 import Expenses from './pages/Expenses';
 import AddExpense from './pages/AddExpense';
+import Wishlist from './pages/Wishlist';
+import AddWishlistItem from './pages/AddWishlistItem';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import Calculator from './pages/Calculator';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
@@ -77,6 +80,30 @@ function App() {
           }
         />
         <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlist/add"
+          element={
+            <ProtectedRoute>
+              <AddWishlistItem />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlist/edit/:id"
+          element={
+            <ProtectedRoute>
+              <AddWishlistItem />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/analytics"
           element={
             <ProtectedRoute>
@@ -89,6 +116,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calculator"
+          element={
+            <ProtectedRoute>
+              <Calculator />
             </ProtectedRoute>
           }
         />

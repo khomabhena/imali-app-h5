@@ -2,6 +2,8 @@
  * AuthLayout Component
  * Mobile-first layout wrapper for authentication pages
  */
+import Logo from '../ui/Logo';
+
 export default function AuthLayout({ children, title, subtitle }) {
   return (
     <div className="h-screen bg-white flex flex-col overflow-y-auto">
@@ -10,8 +12,8 @@ export default function AuthLayout({ children, title, subtitle }) {
         <div className="pt-12 pb-8 flex-shrink-0">
           {/* Logo/Brand - Centered */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 mb-4">
-              <span className="text-xl font-bold text-white">I</span>
+            <div className="inline-flex items-center justify-center mb-4">
+              <Logo size="md" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Imali</h1>
             {title && (

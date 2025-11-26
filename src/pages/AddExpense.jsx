@@ -4,7 +4,8 @@ import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { mockSettings } from '../data/mockData';
+import { useExpenses } from '../hooks/useExpenses';
+import { useSettings } from '../hooks/useSettings';
 import { CurrencyDollarIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 const CURRENCIES = [
@@ -23,16 +24,19 @@ const PRIORITIES = [
 
 export default function AddExpense() {
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const { createExpense } = useExpenses();
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
-    currency: mockSettings.defaultCurrency,
+    currency: settings?.default_currency || 'USD',
     dueDate: '',
-    priority: '',
+    priority: null,
     note: '',
     active: true,
   });
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -61,13 +65,38 @@ export default function AddExpense() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      // TODO: Submit to backend
-      console.log('Expense recorded:', formData);
-      // Navigate back to expenses page
+    if (!validate()) return;
+
+    setSubmitting(true);
+    setErrors({});
+
+    try {
+      const expenseData = {
+        name: formData.name,
+        amount: parseFloat(formData.amount),
+        currency_code: formData.currency,
+        active: formData.active,
+        due_date: formData.dueDate || null,
+        priority: formData.priority ? parseInt(formData.priority) : null,
+        note: formData.note || null,
+      };
+
+      const { error } = await createExpense(expenseData);
+
+      if (error) {
+        setErrors({ submit: error || 'Failed to create expense' });
+        setSubmitting(false);
+        return;
+      }
+
+      // Success - navigate back
       navigate('/expenses');
+    } catch (err) {
+      console.error('Error creating expense:', err);
+      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
+      setSubmitting(false);
     }
   };
 
@@ -229,12 +258,18 @@ export default function AddExpense() {
             >
               Cancel
             </Button>
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-red-600">{errors.submit}</p>
+              </div>
+            )}
             <Button
               type="submit"
               variant="primary"
               size="full"
+              disabled={submitting}
             >
-              Save Expense
+              {submitting ? 'Saving...' : 'Save Expense'}
             </Button>
           </div>
         </form>

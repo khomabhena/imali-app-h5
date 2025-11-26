@@ -6,25 +6,25 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
-import { mockActiveExpenses, formatCurrency } from '../data/mockData';
+import { useExpenses } from '../hooks/useExpenses';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../data/mockData';
 import { PlusIcon, CalendarIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function Expenses() {
   const navigate = useNavigate();
-  const [expenses] = useState(mockActiveExpenses);
+  const { settings } = useSettings();
+  const currency = settings?.default_currency || 'USD';
   const [filter, setFilter] = useState('all'); // 'all', 'active', 'inactive'
-
-  // Filter expenses
-  const filteredExpenses = expenses.filter(exp => {
-    if (filter === 'active') return exp.active;
-    if (filter === 'inactive') return !exp.active;
-    return true;
+  const { expenses, loading, toggleActive, deleteExpense } = useExpenses({
+    active: filter,
+    currency,
   });
 
-  // Calculate totals
+  // Calculate totals (for active expenses in current currency)
   const totalActive = expenses
-    .filter(exp => exp.active)
-    .reduce((sum, exp) => sum + exp.amount, 0);
+    .filter(exp => exp.active && exp.currency_code === currency)
+    .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'No due date';
@@ -34,6 +34,16 @@ export default function Expenses() {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const handleToggleActive = async (expenseId, isActive) => {
+    await toggleActive(expenseId, isActive);
+  };
+
+  const handleDelete = async (expenseId) => {
+    if (window.confirm('Are you sure you want to delete this expense?')) {
+      await deleteExpense(expenseId);
+    }
   };
 
   const getPriorityColor = (priority) => {
@@ -93,7 +103,7 @@ export default function Expenses() {
         {/* Add Expense Button */}
         <button
           onClick={() => navigate('/expenses/add')}
-          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl p-4 mb-4 flex items-center justify-center gap-2 hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg shadow-teal-500/30"
+          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl py-3 px-3 mb-4 flex items-center justify-center gap-2 hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg shadow-teal-500/30"
         >
           <PlusIcon className="w-5 h-5" />
           <span className="font-semibold">Add Expense</span>
@@ -101,9 +111,14 @@ export default function Expenses() {
 
         {/* Expenses List */}
         <div className="bg-white rounded-xl border border-gray-200">
-          {filteredExpenses.length > 0 ? (
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
+              <p className="text-sm text-gray-600">Loading expenses...</p>
+            </div>
+          ) : expenses.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {filteredExpenses.map((expense) => (
+              {expenses.map((expense) => (
                 <div key={expense.id} className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
@@ -127,24 +142,26 @@ export default function Expenses() {
                         )}
                       </div>
                       <p className="text-lg font-bold text-gray-900">
-                        {formatCurrency(expense.amount, expense.currency)}
+                        {formatCurrency(expense.amount, expense.currency_code)}
                       </p>
                     </div>
-                    <button
-                      onClick={() => console.log('Toggle expense', expense.id)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        expense.active
-                          ? 'bg-green-100 text-green-600 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                      }`}
-                      aria-label={expense.active ? 'Deactivate expense' : 'Activate expense'}
-                    >
-                      <div className={`w-5 h-5 rounded-full border-2 ${
-                        expense.active
-                          ? 'bg-green-600 border-green-600'
-                          : 'border-gray-300'
-                      }`} />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleToggleActive(expense.id, !expense.active)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          expense.active
+                            ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                        }`}
+                        aria-label={expense.active ? 'Deactivate expense' : 'Activate expense'}
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 ${
+                          expense.active
+                            ? 'bg-green-600 border-green-600'
+                            : 'border-gray-300'
+                        }`} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">

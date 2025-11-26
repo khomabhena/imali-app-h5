@@ -7,23 +7,23 @@ import {
   HomeIcon,
   ListBulletIcon,
   CalendarIcon,
+  ShoppingBagIcon,
   ChartBarIcon,
-  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
   ListBulletIcon as ListBulletIconSolid,
   CalendarIcon as CalendarIconSolid,
+  ShoppingBagIcon as ShoppingBagIconSolid,
   ChartBarIcon as ChartBarIconSolid,
-  Cog6ToothIcon as Cog6ToothIconSolid,
 } from '@heroicons/react/24/solid';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: HomeIcon, iconSolid: HomeIconSolid },
   { path: '/transactions', label: 'Transactions', icon: ListBulletIcon, iconSolid: ListBulletIconSolid },
   { path: '/expenses', label: 'Expenses', icon: CalendarIcon, iconSolid: CalendarIconSolid },
+  { path: '/wishlist', label: 'Wishlist', icon: ShoppingBagIcon, iconSolid: ShoppingBagIconSolid },
   { path: '/analytics', label: 'Analytics', icon: ChartBarIcon, iconSolid: ChartBarIconSolid },
-  { path: '/settings', label: 'Settings', icon: Cog6ToothIcon, iconSolid: Cog6ToothIconSolid },
 ];
 
 export default function BottomNav() {
@@ -35,7 +35,9 @@ export default function BottomNav() {
         <div className="flex items-center justify-around px-2 py-2">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || 
-              (item.path === '/dashboard' && location.pathname === '/');
+              (item.path === '/dashboard' && location.pathname === '/') ||
+              (item.path === '/wishlist' && location.pathname.startsWith('/wishlist')) ||
+              (item.path === '/expenses' && location.pathname.startsWith('/expenses'));
             const Icon = isActive ? item.iconSolid : item.icon;
 
             return (
