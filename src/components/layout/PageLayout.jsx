@@ -4,6 +4,7 @@
  */
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import Logo from '../ui/Logo';
 
 export default function PageLayout({
   title,
@@ -39,6 +40,7 @@ export default function PageLayout({
                 <ArrowLeftIcon className="w-6 h-6 text-white" />
               </button>
             )}
+            <Logo size="md" className="shrink-0" />
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-white">{title}</h1>
               {subtitle && (

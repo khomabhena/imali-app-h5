@@ -51,6 +51,10 @@ export default function Dashboard() {
                 src="/app-icon.png" 
                 alt="iMali" 
                 className="w-12 h-12 rounded-xl object-contain"
+                width="48"
+                height="48"
+                loading="eager"
+                fetchpriority="high"
               />
               <div>
                 <p className="font-bold text-2xl">iMali</p>

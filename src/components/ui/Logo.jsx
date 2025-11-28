@@ -5,7 +5,7 @@
 export default function Logo({ size = 'md', className = '' }) {
   const sizeClasses = {
     sm: 'w-8 h-8',
-    md: 'w-14 h-14',
+    md: 'w-12 h-12',
     lg: 'w-20 h-20',
     xl: 'w-24 h-24',
   };
@@ -13,11 +13,11 @@ export default function Logo({ size = 'md', className = '' }) {
   return (
     <div className={`${sizeClasses[size]} ${className}`}>
       <img
-        src="/logo.svg"
+        src="/app-icon.png"
         alt="Imali Logo"
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain rounded-xl"
         onError={(e) => {
-          // Fallback if logo.svg doesn't exist
+          // Fallback if app-icon.png doesn't exist
           e.target.style.display = 'none';
           e.target.nextSibling.style.display = 'flex';
         }}
