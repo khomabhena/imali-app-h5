@@ -50,9 +50,9 @@ export default function Dashboard() {
               <img 
                 src="/app-icon.png" 
                 alt="iMali" 
-                className="w-12 h-12 rounded-xl object-contain"
-                width="48"
-                height="48"
+                className="w-10 h-10 rounded-xl object-contain shrink-0"
+                width="40"
+                height="40"
                 loading="eager"
                 fetchpriority="high"
               />

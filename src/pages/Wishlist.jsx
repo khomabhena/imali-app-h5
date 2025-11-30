@@ -63,6 +63,30 @@ export default function Wishlist() {
     return true;
   });
 
+  // Calculate totals
+  const totalAllItems = wishlistItems.reduce((sum, item) => {
+    // Only sum items in the same currency
+    if (item.currency_code === currency) {
+      return sum + parseFloat(item.amount || 0);
+    }
+    return sum;
+  }, 0);
+
+  const totalFilteredItems = filteredItems.reduce((sum, item) => {
+    if (item.currency_code === currency) {
+      return sum + parseFloat(item.amount || 0);
+    }
+    return sum;
+  }, 0);
+
+  const totalAffordable = itemsWithAffordability
+    .filter(i => i.affordability?.isAffordable && i.currency_code === currency)
+    .reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+
+  const totalBlocked = itemsWithAffordability
+    .filter(i => !i.affordability?.isAffordable && i.currency_code === currency)
+    .reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+
   // Get available buckets (exclude Savings)
   const availableBuckets = buckets.filter(b => b.name !== 'Savings');
 
@@ -119,26 +143,71 @@ export default function Wishlist() {
         showBackButton={true}
       >
       <div className="pb-6">
-        {/* Summary Card */}
+        {/* Total Summary Card - Similar to Expenses */}
         <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <ShoppingBagIcon className="w-5 h-5 text-teal-600" />
-              <h3 className="font-semibold text-gray-900">Total Items</h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Total Wishlist Value</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatCurrency(totalAllItems, currency)}
+              </p>
             </div>
-            <span className="text-2xl font-bold text-teal-600">{wishlistItems?.length || 0}</span>
+            <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
+              <ShoppingBagIcon className="w-6 h-6 text-teal-600" />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+        </div>
+
+        {/* Summary Card */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-4">
+          {/* Total Value - Prominent */}
+          <div className="mb-4 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <ShoppingBagIcon className="w-5 h-5 text-teal-600" />
+                <h3 className="font-semibold text-gray-900">Total Wishlist Value</h3>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-teal-600">
+              {formatCurrency(totalAllItems, currency)}
+            </p>
+            {(filter !== 'all' || bucketFilter !== 'all') && (
+              <p className="text-sm text-gray-500 mt-1">
+                Filtered: {formatCurrency(totalFilteredItems, currency)}
+              </p>
+            )}
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Total Items</p>
+              <p className="text-xl font-bold text-gray-900">{wishlistItems?.length || 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Filtered Items</p>
+              <p className="text-xl font-bold text-gray-900">{filteredItems.length}</p>
+            </div>
+          </div>
+
+          {/* Affordability Breakdown */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
             <div>
               <p className="text-xs text-gray-500 mb-1">Affordable</p>
-              <p className="text-lg font-semibold text-green-600">
+              <p className="text-lg font-semibold text-green-600 mb-1">
                 {itemsWithAffordability.filter(i => i.affordability?.isAffordable).length}
+              </p>
+              <p className="text-sm font-medium text-green-700">
+                {formatCurrency(totalAffordable, currency)}
               </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Blocked</p>
-              <p className="text-lg font-semibold text-red-600">
+              <p className="text-lg font-semibold text-red-600 mb-1">
                 {itemsWithAffordability.filter(i => !i.affordability?.isAffordable).length}
+              </p>
+              <p className="text-sm font-medium text-red-700">
+                {formatCurrency(totalBlocked, currency)}
               </p>
             </div>
           </div>
