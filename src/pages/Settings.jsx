@@ -283,10 +283,11 @@ export default function Settings() {
         {/* Logout Button */}
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className="w-full bg-red-50 border-2 border-red-200 text-red-600 rounded-xl p-4 flex items-center justify-center gap-2 hover:bg-red-100 transition-colors mb-4"
+          className="w-full bg-red-50 border-2 border-red-200 text-red-600 rounded-xl p-4 flex items-center justify-center gap-2 hover:bg-red-100 active:bg-red-200 transition-colors mb-4 min-h-[56px] touch-manipulation"
+          type="button"
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5" />
-          <span className="font-semibold">Logout</span>
+          <span className="font-semibold text-base">Logout</span>
         </button>
 
         {/* Logout Confirmation */}
@@ -300,13 +301,15 @@ export default function Settings() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                  className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium min-h-[48px] touch-manipulation"
+                  type="button"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-medium"
+                  className="flex-1 px-4 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition-colors font-medium min-h-[48px] touch-manipulation"
+                  type="button"
                 >
                   Logout
                 </button>
