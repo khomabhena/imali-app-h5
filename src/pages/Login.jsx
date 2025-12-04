@@ -10,11 +10,19 @@ import FormFooter from '../components/auth/FormFooter';
 import SocialLogin from '../components/auth/SocialLogin';
 import { useForm, validateEmail, validatePassword } from '../hooks/useForm';
 import { useAuth } from '../contexts/AuthContext';
+import { FingerPrintIcon } from '@heroicons/react/24/outline';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signInWithOAuth, user } = useAuth();
+  const {
+    signIn,
+    signInWithOAuth,
+    signInWithBiometric,
+    isBiometricSupported,
+    hasBiometricCredentials,
+    user,
+  } = useAuth();
   const { formData, errors, loading, setErrors, setLoading, handleChange, validate } = useForm(
     { email: '', password: '' },
     (data) => {
@@ -96,12 +104,53 @@ export default function Login() {
     }
   };
 
+  const handleBiometricLogin = async () => {
+    setLoading(true);
+    setErrors({});
+    
+    try {
+      const { data, error } = await signInWithBiometric();
+      
+      if (error) {
+        setErrors({ submit: error.message || 'Biometric authentication failed' });
+      } else if (data?.user || data?.session) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <PageLayout
       title="Welcome back"
       subtitle="Sign in to continue"
     >
       <form onSubmit={handleSubmit} className="pb-6">
+        {/* Biometric Login Button */}
+        {isBiometricSupported && hasBiometricCredentials && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={handleBiometricLogin}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl py-4 px-4 flex items-center justify-center gap-3 hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg shadow-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FingerPrintIcon className="w-6 h-6" />
+              <span className="font-semibold text-lg">
+                {loading ? 'Authenticating...' : 'Sign in with Biometric'}
+              </span>
+            </button>
+            <div className="mt-4 flex items-center">
+              <div className="flex-1 border-t border-gray-300"></div>
+              <span className="px-4 text-sm text-gray-500">or</span>
+              <div className="flex-1 border-t border-gray-300"></div>
+            </div>
+          </div>
+        )}
+
         {/* Form Card */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
           <div className="space-y-6">

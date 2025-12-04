@@ -4,6 +4,14 @@
  */
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import {
+  isBiometricSupported,
+  hasBiometricCredentials,
+  storeBiometricSession,
+  getBiometricSession,
+  clearBiometricSession,
+  authenticateBiometric,
+} from '../lib/biometric';
 
 const AuthContext = createContext({});
 
@@ -26,6 +34,16 @@ export function AuthProvider({ children }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Store session for biometric login if available
+      if (session && isBiometricSupported()) {
+        storeBiometricSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: session.expires_at,
+          user: session.user,
+        });
+      }
     });
 
     // Listen for auth changes
@@ -35,6 +53,19 @@ export function AuthProvider({ children }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Store session for biometric login if available
+      if (session && isBiometricSupported()) {
+        storeBiometricSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: session.expires_at,
+          user: session.user,
+        });
+      } else if (!session) {
+        // Clear biometric session on logout
+        clearBiometricSession();
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -114,6 +145,57 @@ export function AuthProvider({ children }) {
     return { data, error };
   };
 
+  // Sign in with biometric
+  const signInWithBiometric = async () => {
+    try {
+      if (!isBiometricSupported()) {
+        return {
+          error: { message: 'Biometric authentication is not supported on this device' },
+        };
+      }
+
+      if (!hasBiometricCredentials()) {
+        return {
+          error: { message: 'No biometric credentials found. Please sign in with email first.' },
+        };
+      }
+
+      // Authenticate with biometric
+      const biometricResult = await authenticateBiometric();
+      
+      if (!biometricResult.success) {
+        return {
+          error: { message: biometricResult.error || 'Biometric authentication failed' },
+        };
+      }
+
+      // Restore session using stored tokens
+      const storedSession = biometricResult.session;
+      
+      // Set the session in Supabase
+      const { data, error } = await supabase.auth.setSession({
+        access_token: storedSession.access_token,
+        refresh_token: storedSession.refresh_token,
+      });
+
+      if (error) {
+        // If session is expired, clear stored credentials
+        if (error.message.includes('expired') || error.message.includes('invalid')) {
+          clearBiometricSession();
+        }
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error signing in with biometric:', error);
+      return {
+        data: null,
+        error: { message: error.message || 'Biometric authentication failed' },
+      };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -127,6 +209,9 @@ export function AuthProvider({ children }) {
     verifyEmail,
     verifyOtp,
     resendVerificationEmail,
+    signInWithBiometric,
+    isBiometricSupported: isBiometricSupported(),
+    hasBiometricCredentials: hasBiometricCredentials(),
     isAuthenticated: !!user,
   };
 

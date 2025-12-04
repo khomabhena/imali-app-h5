@@ -9,7 +9,7 @@ import PageLayout from '../components/layout/PageLayout';
 import { useExpenses } from '../hooks/useExpenses';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../data/mockData';
-import { PlusIcon, CalendarIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, CalendarIcon, ExclamationCircleIcon, PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 export default function Expenses() {
   const navigate = useNavigate();
@@ -38,6 +38,12 @@ export default function Expenses() {
 
   const handleToggleActive = async (expenseId, isActive) => {
     await toggleActive(expenseId, isActive);
+  };
+
+  const handleEdit = (expense) => {
+    navigate(`/expenses/edit/${expense.id}`, {
+      state: { expense }
+    });
   };
 
   const handleDelete = async (expenseId) => {
@@ -155,11 +161,25 @@ export default function Expenses() {
                         }`}
                         aria-label={expense.active ? 'Deactivate expense' : 'Activate expense'}
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 ${
-                          expense.active
-                            ? 'bg-green-600 border-green-600'
-                            : 'border-gray-300'
-                        }`} />
+                        {expense.active ? (
+                          <CheckIcon className="w-5 h-5" />
+                        ) : (
+                          <div className="w-5 h-5 border-2 border-gray-300 rounded" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleEdit(expense)}
+                        className="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                        title="Edit"
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(expense.id)}
+                        className="p-2 rounded-lg border border-gray-300 text-red-600 hover:bg-red-50 transition-colors"
+                        title="Delete"
+                      >
+                        <TrashIcon className="w-5 h-5" />
                       </button>
                     </div>
                   </div>

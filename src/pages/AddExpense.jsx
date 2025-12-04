@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import Input from '../components/ui/Input';
@@ -24,16 +24,19 @@ const PRIORITIES = [
 
 export default function AddExpense() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEditing = location.pathname.includes('/edit/');
+  const editExpense = location.state?.expense;
   const { settings } = useSettings();
-  const { createExpense } = useExpenses();
+  const { createExpense, updateExpense } = useExpenses();
   const [formData, setFormData] = useState({
-    name: '',
-    amount: '',
-    currency: settings?.default_currency || 'USD',
-    dueDate: '',
-    priority: null,
-    note: '',
-    active: true,
+    name: editExpense?.name || '',
+    amount: editExpense?.amount?.toString() || '',
+    currency: editExpense?.currency_code || settings?.default_currency || 'USD',
+    dueDate: editExpense?.due_date ? editExpense.due_date.split('T')[0] : '',
+    priority: editExpense?.priority?.toString() || '',
+    note: editExpense?.note || '',
+    active: editExpense?.active !== undefined ? editExpense.active : true,
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -83,12 +86,20 @@ export default function AddExpense() {
         note: formData.note || null,
       };
 
-      const { error } = await createExpense(expenseData);
-
-      if (error) {
-        setErrors({ submit: error || 'Failed to create expense' });
-        setSubmitting(false);
-        return;
+      if (isEditing && editExpense?.id) {
+        const { error } = await updateExpense(editExpense.id, expenseData);
+        if (error) {
+          setErrors({ submit: error || 'Failed to update expense' });
+          setSubmitting(false);
+          return;
+        }
+      } else {
+        const { error } = await createExpense(expenseData);
+        if (error) {
+          setErrors({ submit: error || 'Failed to create expense' });
+          setSubmitting(false);
+          return;
+        }
       }
 
       // Success - navigate back
@@ -103,8 +114,8 @@ export default function AddExpense() {
   return (
     <AppLayout>
       <PageLayout
-        title="Add Expense"
-        subtitle="Create a one-time expense"
+        title={isEditing ? 'Edit Expense' : 'Add Expense'}
+        subtitle={isEditing ? 'Update expense details' : 'Create a one-time expense'}
         showBackButton={true}
       >
         <form onSubmit={handleSubmit} className="pb-6">
@@ -269,7 +280,7 @@ export default function AddExpense() {
               size="full"
               disabled={submitting}
             >
-              {submitting ? 'Saving...' : 'Save Expense'}
+              {submitting ? 'Saving...' : isEditing ? 'Update Expense' : 'Save Expense'}
             </Button>
           </div>
         </form>

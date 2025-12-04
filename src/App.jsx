@@ -94,6 +94,14 @@ function App() {
             }
           />
           <Route
+            path="/expenses/edit/:id"
+            element={
+              <ProtectedRoute>
+                <AddExpense />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/wishlist"
             element={
               <ProtectedRoute>

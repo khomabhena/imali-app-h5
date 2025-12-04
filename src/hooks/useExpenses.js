@@ -32,8 +32,12 @@ export function useExpenses(filters = {}) {
         .from('expenses')
         .select('*')
         .eq('user_id', user.id)
-        .eq('currency_code', currency)
         .order('created_at', { ascending: false });
+
+      // Only filter by currency if specified (not 'all' or empty)
+      if (currency && currency !== 'all') {
+        query = query.eq('currency_code', currency);
+      }
 
       if (active === 'active') {
         query = query.eq('active', true);

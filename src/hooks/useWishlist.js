@@ -35,10 +35,14 @@ export function useWishlist(filters = {}) {
           bucket:buckets(*)
         `)
         .eq('user_id', user.id)
-        .eq('currency_code', currency)
         .is('purchased_at', null) // Only show unpurchased items
         .order('priority', { ascending: true })
         .order('created_at', { ascending: false });
+
+      // Only filter by currency if specified (not 'all' or empty)
+      if (currency && currency !== 'all') {
+        query = query.eq('currency_code', currency);
+      }
 
       if (bucketId !== 'all') {
         query = query.eq('bucket_id', bucketId);

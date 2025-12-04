@@ -54,7 +54,7 @@ export default function Dashboard() {
                 width="40"
                 height="40"
                 loading="eager"
-                fetchpriority="high"
+                fetchPriority="high"
               />
               <div>
                 <p className="font-bold text-2xl">iMali</p>

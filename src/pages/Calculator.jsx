@@ -2,13 +2,15 @@
  * Financial Calculator / What-If Simulator
  * Stateless calculator to test income allocation and affordability
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useBuckets } from '../hooks/useBuckets';
 import { useSettings } from '../hooks/useSettings';
+import { useExpenses } from '../hooks/useExpenses';
+import { useWishlist } from '../hooks/useWishlist';
 import { formatCurrency, checkAffordability, calculateMaxAffordable } from '../data/mockData';
 import { getBucketColor } from '../data/colors';
 import { 
@@ -19,7 +21,9 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
   PlusIcon,
-  TrashIcon
+  TrashIcon,
+  ArrowDownTrayIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const CURRENCIES = [
@@ -38,6 +42,8 @@ const MODES = [
 export default function Calculator() {
   const { buckets, loading: bucketsLoading } = useBuckets();
   const { settings, loading: settingsLoading } = useSettings();
+  const { expenses: allExpenses } = useExpenses({ active: 'all', currency: 'all' });
+  const { wishlistItems: allWishlistItems } = useWishlist({ bucketId: 'all', currency: 'all' });
   
   // Income Simulator State
   const [incomeAmount, setIncomeAmount] = useState('');
@@ -49,6 +55,17 @@ export default function Calculator() {
   const [itemName, setItemName] = useState('');
   const [itemAmount, setItemAmount] = useState('');
   const [selectedBucketId, setSelectedBucketId] = useState('');
+
+  // Import Modal State
+  const [showImportExpenses, setShowImportExpenses] = useState(false);
+  const [showImportWishlist, setShowImportWishlist] = useState(false);
+
+  // Update currency when settings load
+  useEffect(() => {
+    if (settings?.default_currency) {
+      setIncomeCurrency(settings.default_currency);
+    }
+  }, [settings?.default_currency]);
 
   // Calculate allocation from simulated income
   const allocation = useMemo(() => {
@@ -135,6 +152,48 @@ export default function Calculator() {
     setItemName('');
     setItemAmount('');
     setSelectedBucketId('');
+  };
+
+  // Filter expenses and wishlist by current currency
+  const filteredExpenses = useMemo(() => {
+    return allExpenses.filter(exp => exp.currency_code === incomeCurrency);
+  }, [allExpenses, incomeCurrency]);
+
+  const filteredWishlistItems = useMemo(() => {
+    return allWishlistItems.filter(item => item.currency_code === incomeCurrency);
+  }, [allWishlistItems, incomeCurrency]);
+
+  // Import expense
+  const handleImportExpense = (expense) => {
+    const newExpense = {
+      id: Date.now() + Math.random(),
+      name: expense.name,
+      amount: expense.amount.toString(),
+    };
+    setExpenses([...expenses, newExpense]);
+    setShowImportExpenses(false);
+  };
+
+  // Import multiple expenses
+  const handleImportAllExpenses = () => {
+    const activeExpenses = filteredExpenses.filter(exp => exp.active);
+    if (activeExpenses.length === 0) return;
+    
+    const newExpenses = activeExpenses.map(exp => ({
+      id: Date.now() + Math.random() + exp.id,
+      name: exp.name,
+      amount: exp.amount.toString(),
+    }));
+    setExpenses([...expenses, ...newExpenses]);
+    setShowImportExpenses(false);
+  };
+
+  // Import wishlist item
+  const handleImportWishlistItem = (item) => {
+    setItemName(item.name);
+    setItemAmount(item.amount.toString());
+    setSelectedBucketId(item.bucket_id);
+    setShowImportWishlist(false);
   };
 
   if (bucketsLoading || settingsLoading) {
@@ -231,13 +290,24 @@ export default function Calculator() {
                 <label className="block text-sm font-medium text-gray-700">
                   Expenses (Optional)
                 </label>
-                <button
-                  onClick={handleAddExpense}
-                  className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                  Add Expense
-                </button>
+                <div className="flex items-center gap-2">
+                  {filteredExpenses.length > 0 && (
+                    <button
+                      onClick={() => setShowImportExpenses(true)}
+                      className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+                    >
+                      <ArrowDownTrayIcon className="w-4 h-4" />
+                      Import
+                    </button>
+                  )}
+                  <button
+                    onClick={handleAddExpense}
+                    className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                    Add Expense
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 {expenses.map((expense, index) => (
@@ -363,23 +433,41 @@ export default function Calculator() {
           
           <div className="p-4 space-y-4">
             {/* Item Input */}
-            <Input
-              label="Item Name"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              placeholder="e.g., MacBook Pro"
-            />
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Item Details
+                </label>
+                {filteredWishlistItems.length > 0 && (
+                  <button
+                    onClick={() => setShowImportWishlist(true)}
+                    className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Import from Wishlist
+                  </button>
+                )}
+              </div>
+              <div className="space-y-4">
+                <Input
+                  label="Item Name"
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                  placeholder="e.g., MacBook Pro"
+                />
 
-            <Input
-              label="Item Amount"
-              type="number"
-              value={itemAmount}
-              onChange={(e) => setItemAmount(e.target.value)}
-              placeholder="0.00"
-              icon={CurrencyDollarIcon}
-              step="0.01"
-              min="0"
-            />
+                <Input
+                  label="Item Amount"
+                  type="number"
+                  value={itemAmount}
+                  onChange={(e) => setItemAmount(e.target.value)}
+                  placeholder="0.00"
+                  icon={CurrencyDollarIcon}
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+            </div>
 
             {/* Bucket Selector */}
             <div>
@@ -497,6 +585,117 @@ export default function Calculator() {
         >
           Clear All
         </Button>
+
+        {/* Import Expenses Modal */}
+        {showImportExpenses && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Import Expenses</h3>
+                  <p className="text-sm text-gray-500">Select expenses to import ({incomeCurrency})</p>
+                </div>
+                <button
+                  onClick={() => setShowImportExpenses(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {filteredExpenses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500">No expenses found in {incomeCurrency}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleImportAllExpenses}
+                      className="w-full px-4 py-2 bg-teal-50 text-teal-700 rounded-lg text-sm font-medium hover:bg-teal-100 transition-colors mb-4"
+                    >
+                      Import All Active Expenses ({filteredExpenses.filter(e => e.active).length})
+                    </button>
+                    {filteredExpenses.map(expense => (
+                      <button
+                        key={expense.id}
+                        onClick={() => handleImportExpense(expense)}
+                        className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{expense.name}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formatCurrency(expense.amount, expense.currency_code)}
+                              {expense.active && (
+                                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
+                                  Active
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <PlusIcon className="w-5 h-5 text-teal-600" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Import Wishlist Modal */}
+        {showImportWishlist && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Import from Wishlist</h3>
+                  <p className="text-sm text-gray-500">Select a wishlist item ({incomeCurrency})</p>
+                </div>
+                <button
+                  onClick={() => setShowImportWishlist(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {filteredWishlistItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500">No wishlist items found in {incomeCurrency}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredWishlistItems.map(item => {
+                      const bucket = buckets.find(b => b.id === item.bucket_id);
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleImportWishlistItem(item)}
+                          className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {formatCurrency(item.amount, item.currency_code)}
+                                {bucket && (
+                                  <span className="ml-2 text-gray-400">• {bucket.name}</span>
+                                )}
+                              </p>
+                            </div>
+                            <PlusIcon className="w-5 h-5 text-teal-600" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </PageLayout>
     </AppLayout>
   );
