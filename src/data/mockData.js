@@ -197,6 +197,15 @@ export const formatCurrency = (amount, currency = 'USD', locale = 'en-US') => {
   }).format(amount);
 };
 
+// Helper function to format balance (respects visibility setting)
+export const formatBalance = (amount, currency = 'USD', locale = 'en-US', isVisible = true) => {
+  if (!isVisible) {
+    // Return masked balance (e.g., "••••" or "****")
+    return '********';
+  }
+  return formatCurrency(amount, currency, locale);
+};
+
 // Helper function to format date
 export const formatDate = (dateString, locale = 'en-US') => {
   const date = new Date(dateString);

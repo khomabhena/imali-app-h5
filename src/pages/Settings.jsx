@@ -9,12 +9,15 @@ import PageLayout from '../components/layout/PageLayout';
 import { useSettings } from '../hooks/useSettings';
 import { useBuckets } from '../hooks/useBuckets';
 import { useAuth } from '../contexts/AuthContext';
+import { useBalanceVisibility } from '../hooks/useBalanceVisibility';
 import { 
   CheckCircleIcon, 
   CurrencyDollarIcon, 
   UserIcon, 
   InformationCircleIcon,
-  ArrowRightOnRectangleIcon 
+  ArrowRightOnRectangleIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline';
 
 const CURRENCIES = [
@@ -55,6 +58,7 @@ export default function Settings() {
   const { signOut, user } = useAuth();
   const { settings, loading: settingsLoading, updateSettings } = useSettings();
   const { buckets, loading: bucketsLoading } = useBuckets();
+  const { isVisible: balanceVisible, toggle: toggleBalanceVisibility } = useBalanceVisibility();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -216,6 +220,44 @@ export default function Settings() {
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        {/* Privacy Section */}
+        <div className="bg-white rounded-xl border border-gray-200 mb-4">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <EyeIcon className="w-5 h-5 text-gray-400" />
+              <h3 className="text-sm font-medium text-gray-700">Privacy</h3>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  {balanceVisible ? (
+                    <EyeIcon className="w-5 h-5 text-gray-600" />
+                  ) : (
+                    <EyeSlashIcon className="w-5 h-5 text-gray-600" />
+                  )}
+                  <label className="text-sm font-medium text-gray-700">Show Balances</label>
+                </div>
+                <p className="text-xs text-gray-500">Toggle to hide or show balance amounts</p>
+              </div>
+              <button
+                type="button"
+                onClick={toggleBalanceVisibility}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  balanceVisible ? 'bg-teal-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    balanceVisible ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         </div>
 

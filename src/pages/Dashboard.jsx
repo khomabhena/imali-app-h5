@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency } from '../data/mockData';
+import { formatCurrency, formatBalance } from '../data/mockData';
 import { useBuckets } from '../hooks/useBuckets';
 import { useBalances } from '../hooks/useBalances';
 import { useSettings } from '../hooks/useSettings';
 import { useAuth } from '../contexts/AuthContext';
+import { useBalanceVisibility } from '../hooks/useBalanceVisibility';
 import AppLayout from '../components/layout/AppLayout';
 import BucketCard from '../components/dashboard/BucketCard';
 import { Squares2X2Icon, PlusIcon, CreditCardIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const { settings } = useSettings();
   const currency = settings?.default_currency || 'USD';
   const { balances, loading: balancesLoading, getBalanceByBucket } = useBalances(currency);
+  const { isVisible: balanceVisible } = useBalanceVisibility();
   
   // Combine buckets with balances
   const bucketsWithBalances = buckets.map(bucket => ({
@@ -73,7 +75,7 @@ export default function Dashboard() {
           {/* Total Balance */}
           <div>
             <p className="text-sm text-teal-100 mb-2">Total Balance</p>
-            <p className="text-4xl font-bold">{formatCurrency(totalBalance)}</p>
+            <p className="text-4xl font-bold">{formatBalance(totalBalance, currency, 'en-US', balanceVisible)}</p>
           </div>
         </div>
       </div>
@@ -117,6 +119,8 @@ export default function Dashboard() {
               <BucketCard
                 key={bucket.id}
                 bucket={bucket}
+                balanceVisible={balanceVisible}
+                currency={currency}
                 onClick={() => {
                   // Special handling for Expenses bucket - navigate to Expenses page
                   if (bucket.name === 'Expenses') {

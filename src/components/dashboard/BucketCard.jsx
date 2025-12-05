@@ -2,10 +2,10 @@
  * BucketCard Component
  * Displays a bucket with balance and allocation
  */
-import { formatCurrency } from '../../data/mockData';
+import { formatBalance } from '../../data/mockData';
 import { getBucketColor } from '../../data/colors';
 
-export default function BucketCard({ bucket, onClick }) {
+export default function BucketCard({ bucket, onClick, balanceVisible = true, currency = 'USD' }) {
   const colors = getBucketColor(bucket.name);
   const isPositive = bucket.balance >= 0;
   const balanceColor = isPositive ? 'text-gray-900' : 'text-red-600';
@@ -32,9 +32,9 @@ export default function BucketCard({ bucket, onClick }) {
       
       <div>
         <p className={`text-2xl font-bold ${balanceColor}`}>
-          {formatCurrency(bucket.balance)}
+          {formatBalance(bucket.balance, currency, 'en-US', balanceVisible)}
         </p>
-        {!isPositive && (
+        {!isPositive && balanceVisible && (
           <p className="text-sm text-red-600 mt-1.5">Low balance</p>
         )}
       </div>
