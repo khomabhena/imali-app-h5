@@ -10,5 +10,6 @@ VALUES
   ('Fun', 10.00, 10.00, 10.00, 10.00, '#f59e0b', 5),
   ('Savings', 0.00, 1.00, 1.00, 1.00, '#64748b', 6),
   ('Expenses', 0.00, 1.00, 1.00, 1.00, '#8b5cf6', 7)
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name) DO UPDATE SET
+  display_order = EXCLUDED.display_order;
 

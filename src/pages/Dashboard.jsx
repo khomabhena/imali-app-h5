@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useBalanceVisibility } from '../hooks/useBalanceVisibility';
 import AppLayout from '../components/layout/AppLayout';
 import BucketCard from '../components/dashboard/BucketCard';
-import { Squares2X2Icon, PlusIcon, CreditCardIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { Squares2X2Icon, PlusIcon, CreditCardIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function Dashboard() {
   const { settings } = useSettings();
   const currency = settings?.default_currency || 'USD';
   const { balances, loading: balancesLoading, getBalanceByBucket } = useBalances(currency);
-  const { isVisible: balanceVisible } = useBalanceVisibility();
+  const { isVisible: balanceVisible, toggle: toggleBalanceVisibility } = useBalanceVisibility();
   
   // Combine buckets with balances
   const bucketsWithBalances = buckets.map(bucket => ({
@@ -73,9 +73,23 @@ export default function Dashboard() {
           </div>
 
           {/* Total Balance */}
-          <div>
+          <div className=''>
             <p className="text-sm text-teal-100 mb-2">Total Balance</p>
-            <p className="text-4xl font-bold">{formatBalance(totalBalance, currency, 'en-US', balanceVisible)}</p>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-4xl font-bold">{formatBalance(totalBalance, currency, 'en-US', balanceVisible)}</p>
+              <button
+                onClick={toggleBalanceVisibility}
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors touch-manipulation"
+                aria-label={balanceVisible ? 'Hide balances' : 'Show balances'}
+                title={balanceVisible ? 'Hide balances' : 'Show balances'}
+              >
+                {balanceVisible ? (
+                  <EyeIcon className="w-4 h-4 text-white" />
+                ) : (
+                  <EyeSlashIcon className="w-4 h-4 text-white" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
