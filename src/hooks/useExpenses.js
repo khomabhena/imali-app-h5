@@ -95,6 +95,9 @@ export function useExpenses(filters = {}) {
     try {
       setError(null);
 
+      // Get previous expense data for comparison
+      const previousExpense = expenses.find(exp => exp.id === expenseId);
+
       const { data, error: updateError } = await supabase
         .from('expenses')
         .update({

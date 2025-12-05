@@ -116,17 +116,56 @@ export default function Purchase() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      if (isDailyExpense) {
-        // Just a check, don't record - affordability is already shown
+    if (!validate()) return;
+    
+    if (isDailyExpense) {
+      // Just a check, don't record - affordability is already shown
+      return;
+    }
+    
+    setSubmitting(true);
+    setErrors({});
+    
+    try {
+      const purchaseAmount = parseFloat(formData.amount);
+      const purchaseDate = formData.date ? new Date(formData.date).toISOString() : new Date().toISOString();
+      
+      const { data, error } = await recordPurchase({
+        userId: user.id,
+        amount: purchaseAmount,
+        bucketId: formData.bucketId,
+        currency: currency,
+        itemName: formData.itemName || '',
+        category: formData.category || '',
+        note: formData.note || '',
+        date: purchaseDate,
+      });
+      
+      if (error) {
+        if (error.code === 'AFFORDABILITY_BLOCKED') {
+          setErrors({ 
+            submit: 'Purchase blocked: insufficient balance. You need ' + 
+            formatCurrency(error.requiredBalance, currency) + 
+            ' but only have ' + 
+            formatCurrency(error.currentBalance, currency) 
+          });
+        } else {
+          setErrors({ submit: error.message || 'Failed to record purchase' });
+        }
+        setSubmitting(false);
         return;
       }
-      // TODO: Submit to backend
-      console.log('Purchase recorded:', formData);
-      // Navigate back to dashboard
-      navigate('/dashboard');
+      
+      if (data) {
+        // Success - navigate back to dashboard
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error('Error recording purchase:', err);
+      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
+      setSubmitting(false);
     }
   };
 

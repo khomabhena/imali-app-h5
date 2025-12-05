@@ -24,6 +24,12 @@ CREATE POLICY "Authenticated users can view buckets"
   TO authenticated
   USING (true);
 
+-- Policy: All authenticated users can insert buckets (for dynamic creation like Expenses bucket)
+CREATE POLICY "Authenticated users can insert buckets"
+  ON buckets FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
 -- Create index
 CREATE INDEX IF NOT EXISTS buckets_name_idx ON buckets(name);
 CREATE INDEX IF NOT EXISTS buckets_display_order_idx ON buckets(display_order);

@@ -117,7 +117,20 @@ export default function Dashboard() {
               <BucketCard
                 key={bucket.id}
                 bucket={bucket}
-                onClick={() => navigate(`/buckets/${bucket.id}`)}
+                onClick={() => {
+                  // Special handling for Expenses bucket - navigate to Expenses page
+                  if (bucket.name === 'Expenses') {
+                    navigate('/expenses');
+                  } else {
+                    // For other buckets, navigate to transactions filtered by bucket
+                    navigate('/transactions', { 
+                      state: { 
+                        filterBucket: bucket.id,
+                        filterBucketName: bucket.name 
+                      } 
+                    });
+                  }
+                }}
               />
             ))}
           </div>

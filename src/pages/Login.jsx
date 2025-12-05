@@ -45,8 +45,14 @@ export default function Login() {
   }, [location, navigate, setErrors]);
 
   // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  // Don't render form if user is logged in (will redirect)
   if (user) {
-    navigate('/dashboard', { replace: true });
     return null;
   }
 

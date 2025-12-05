@@ -24,19 +24,49 @@ export async function recordIncome({
 
     const totalExpenses = activeExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
 
-    // 2. Calculate net after expenses
+    // 2. Get Expenses bucket (create if doesn't exist)
+    let { data: expensesBucket, error: expensesBucketError } = await supabase
+      .from('buckets')
+      .select('*')
+      .eq('name', 'Expenses')
+      .single();
+
+    if (expensesBucketError && expensesBucketError.code === 'PGRST116') {
+      // Expenses bucket doesn't exist, create it
+      const { data: newBucket, error: createError } = await supabase
+        .from('buckets')
+        .insert({
+          name: 'Expenses',
+          allocation_pct: 0,
+          limiter_light: 1,
+          limiter_intermediate: 1,
+          limiter_strict: 1,
+          color: '#8b5cf6',
+          display_order: 0,
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      expensesBucket = newBucket;
+    } else if (expensesBucketError) {
+      throw expensesBucketError;
+    }
+
+    // 3. Calculate net after expenses
     const netAfterExpenses = amount - totalExpenses;
 
-    // 3. Get buckets (excluding Savings)
+    // 4. Get buckets (excluding Savings and Expenses)
     const { data: buckets, error: bucketsError } = await supabase
       .from('buckets')
       .select('*')
       .neq('name', 'Savings')
+      .neq('name', 'Expenses')
       .order('display_order');
 
     if (bucketsError) throw bucketsError;
 
-    // 4. Get Savings bucket
+    // 5. Get Savings bucket
     const { data: savingsBucket, error: savingsError } = await supabase
       .from('buckets')
       .select('*')
@@ -63,25 +93,38 @@ export async function recordIncome({
 
     if (incomeError) throw incomeError;
 
-    // 6. Reserve expenses (if any)
+    // 6. Allocate expenses to Expense Bucket (if any)
+    let expensesAllocation = null;
     if (totalExpenses > 0) {
-      const { error: reserveError } = await supabase
+      // Create allocation transaction for Expense Bucket
+      const { data: expensesTransaction, error: expensesTransError } = await supabase
         .from('transactions')
         .insert({
           user_id: userId,
-          type: 'reserve',
-          amount: -totalExpenses,
+          type: 'sweep',
+          amount: totalExpenses,
           currency_code: currency,
-          bucket_id: null,
-          item_name: 'Expenses Reserve',
-          note: `Reserved for ${activeExpenses.length} active expense(s)`,
+          bucket_id: expensesBucket.id,
+          item_name: 'Expenses Allocation',
+          note: `Allocated for ${activeExpenses.length} active expense(s)`,
           date: date,
-        });
+        })
+        .select()
+        .single();
 
-      if (reserveError) throw reserveError;
+      if (expensesTransError) throw expensesTransError;
+
+      // Update Expense Bucket balance
+      await updateBalance(userId, expensesBucket.id, currency, totalExpenses);
+
+      expensesAllocation = {
+        bucket: expensesBucket,
+        amount: totalExpenses,
+        transaction: expensesTransaction,
+      };
     }
 
-    // 7. Allocate to buckets
+    // 7. Allocate to other buckets
     const allocations = [];
     let totalAllocated = 0;
 
@@ -160,6 +203,7 @@ export async function recordIncome({
     return {
       data: {
         incomeTransaction,
+        expensesAllocation,
         allocations,
         savingsAmount,
         totalExpenses,

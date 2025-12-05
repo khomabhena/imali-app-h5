@@ -2,7 +2,8 @@
  * Transactions Page
  * Transaction history with filters
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import TransactionItem from '../components/transactions/TransactionItem';
@@ -12,11 +13,21 @@ import { useSettings } from '../hooks/useSettings';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 
 export default function Transactions() {
+  const location = useLocation();
   const { settings } = useSettings();
   const { buckets } = useBuckets();
   const currency = settings?.default_currency || 'USD';
   const [selectedType, setSelectedType] = useState('all');
-  const [selectedBucket, setSelectedBucket] = useState('all');
+  const [selectedBucket, setSelectedBucket] = useState(
+    location.state?.filterBucket || 'all'
+  );
+
+  // Update bucket filter if passed from navigation
+  useEffect(() => {
+    if (location.state?.filterBucket) {
+      setSelectedBucket(location.state.filterBucket);
+    }
+  }, [location.state]);
 
   const { transactions, loading } = useTransactions({
     type: selectedType,

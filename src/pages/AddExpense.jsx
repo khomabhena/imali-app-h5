@@ -6,6 +6,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useExpenses } from '../hooks/useExpenses';
 import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../data/mockData';
 import { CurrencyDollarIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 const CURRENCIES = [
@@ -33,6 +34,9 @@ export default function AddExpense() {
     name: editExpense?.name || '',
     amount: editExpense?.amount?.toString() || '',
     currency: editExpense?.currency_code || settings?.default_currency || 'USD',
+    category: editExpense?.category || '', // Category for reporting (optional)
+    paymentType: editExpense?.paid_amount !== undefined && editExpense?.paid_amount < editExpense?.amount ? 'incremental' : 'full', // 'full' or 'incremental'
+    paidAmount: editExpense?.paid_amount?.toString() || '', // For incremental payments
     dueDate: editExpense?.due_date ? editExpense.due_date.split('T')[0] : '',
     priority: editExpense?.priority?.toString() || '',
     note: editExpense?.note || '',
@@ -64,9 +68,24 @@ export default function AddExpense() {
     if (!formData.currency) {
       newErrors.currency = 'Please select a currency';
     }
+    if (formData.paymentType === 'incremental') {
+      const paidAmount = parseFloat(formData.paidAmount || 0);
+      const totalAmount = parseFloat(formData.amount || 0);
+      if (paidAmount < 0) {
+        newErrors.paidAmount = 'Paid amount cannot be negative';
+      }
+      if (paidAmount > totalAmount) {
+        newErrors.paidAmount = 'Paid amount cannot exceed total amount';
+      }
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // Calculate remaining amount for incremental payments
+  const remainingAmount = formData.paymentType === 'incremental' && formData.amount && formData.paidAmount
+    ? parseFloat(formData.amount) - parseFloat(formData.paidAmount || 0)
+    : 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,6 +99,8 @@ export default function AddExpense() {
         name: formData.name,
         amount: parseFloat(formData.amount),
         currency_code: formData.currency,
+        category: formData.category || null, // Category for reporting (optional)
+        paid_amount: formData.paymentType === 'incremental' ? parseFloat(formData.paidAmount || 0) : parseFloat(formData.amount), // Full payment or partial
         active: formData.active,
         due_date: formData.dueDate || null,
         priority: formData.priority ? parseInt(formData.priority) : null,
@@ -180,6 +201,102 @@ export default function AddExpense() {
                 )}
               </div>
 
+              {/* Category Selector (Optional) */}
+              <div className="w-full">
+                <label className="block text-base font-medium text-gray-700 mb-2.5">
+                  Category <span className="text-gray-400 text-sm">(Optional)</span>
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-teal-500/20 bg-gray-50 hover:bg-white hover:border-gray-300 transition-all duration-200 pl-4 pr-4 py-4 text-gray-900 text-lg min-h-[52px] focus:outline-none focus:ring-2 focus:ring-offset-0"
+                >
+                  <option value="">No category</option>
+                  <option value="Necessity">Necessity</option>
+                  <option value="Investment">Investment</option>
+                  <option value="Learning">Learning</option>
+                  <option value="Emergency">Emergency</option>
+                  <option value="Fun">Fun</option>
+                </select>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Categorize for reporting. All expenses deduct from Expense Bucket automatically.
+                </p>
+              </div>
+
+              {/* Payment Type */}
+              <div className="w-full">
+                <label className="block text-base font-medium text-gray-700 mb-2.5">
+                  Payment Type
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, paymentType: 'full', paidAmount: prev.amount }))}
+                    className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                      formData.paymentType === 'full'
+                        ? 'bg-teal-500 text-white border-teal-500'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    Full Payment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, paymentType: 'incremental', paidAmount: prev.paidAmount || '0' }))}
+                    className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                      formData.paymentType === 'incremental'
+                        ? 'bg-teal-500 text-white border-teal-500'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    Incremental
+                  </button>
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  {formData.paymentType === 'full' 
+                    ? 'Deduct full amount immediately'
+                    : 'Pay little by little over time'
+                  }
+                </p>
+              </div>
+
+              {/* Paid Amount (for incremental payments) */}
+              {formData.paymentType === 'incremental' && (
+                <>
+                  <Input
+                    label="Amount Paid So Far"
+                    type="number"
+                    name="paidAmount"
+                    value={formData.paidAmount}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    error={errors.paidAmount}
+                    icon={CurrencyDollarIcon}
+                    step="0.01"
+                    min="0"
+                    helperText={`Remaining: ${remainingAmount >= 0 ? formatCurrency(remainingAmount, formData.currency) : '0.00'}`}
+                  />
+                  {formData.amount && formData.paidAmount && remainingAmount > 0 && (
+                    <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg">
+                      <p className="text-xs text-gray-600 mb-1">Payment Progress:</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                        <div 
+                          className="bg-teal-500 h-2 rounded-full transition-all"
+                          style={{ 
+                            width: `${Math.min(100, (parseFloat(formData.paidAmount || 0) / parseFloat(formData.amount)) * 100)}%` 
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Paid: {formatCurrency(parseFloat(formData.paidAmount || 0), formData.currency)}</span>
+                        <span className="text-gray-600">Remaining: {formatCurrency(remainingAmount, formData.currency)}</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               {/* Due Date */}
               <Input
                 label="Due Date"
@@ -219,7 +336,7 @@ export default function AddExpense() {
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <div>
                   <label className="text-sm font-medium text-gray-700">Active</label>
-                  <p className="text-xs text-gray-500">Active expenses are deducted from income</p>
+                  <p className="text-xs text-gray-500">Active expenses are deducted from the selected bucket</p>
                 </div>
                 <button
                   type="button"

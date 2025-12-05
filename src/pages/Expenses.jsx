@@ -21,6 +21,30 @@ export default function Expenses() {
     currency,
   });
 
+  // Helper to get category color
+  const getCategoryColor = (category) => {
+    const colors = {
+      'Necessity': 'bg-cyan-100 text-cyan-700',
+      'Investment': 'bg-teal-100 text-teal-700',
+      'Learning': 'bg-blue-100 text-blue-700',
+      'Emergency': 'bg-red-100 text-red-700',
+      'Fun': 'bg-amber-100 text-amber-700',
+    };
+    return colors[category] || 'bg-gray-100 text-gray-700';
+  };
+
+  // Helper to calculate payment progress
+  const getPaymentProgress = (expense) => {
+    if (!expense.paid_amount && expense.paid_amount !== 0) {
+      return null; // Full payment, no progress tracking
+    }
+    const total = parseFloat(expense.amount || 0);
+    const paid = parseFloat(expense.paid_amount || 0);
+    const remaining = total - paid;
+    const percentage = total > 0 ? (paid / total) * 100 : 0;
+    return { paid, remaining, total, percentage };
+  };
+
   // Calculate totals (for active expenses in current currency)
   const totalActive = expenses
     .filter(exp => exp.active && exp.currency_code === currency)
@@ -150,6 +174,31 @@ export default function Expenses() {
                       <p className="text-lg font-bold text-gray-900">
                         {formatCurrency(expense.amount, expense.currency_code)}
                       </p>
+                      {expense.category && (
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mt-1 ${getCategoryColor(expense.category)}`}>
+                          {expense.category}
+                        </span>
+                      )}
+                      {(() => {
+                        const progress = getPaymentProgress(expense);
+                        if (progress && progress.remaining > 0) {
+                          return (
+                            <div className="mt-2">
+                              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Paid: {formatCurrency(progress.paid, expense.currency_code)}</span>
+                                <span>Remaining: {formatCurrency(progress.remaining, expense.currency_code)}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                <div 
+                                  className="bg-teal-500 h-1.5 rounded-full transition-all"
+                                  style={{ width: `${Math.min(100, progress.percentage)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     <div className="flex gap-2">
                       <button

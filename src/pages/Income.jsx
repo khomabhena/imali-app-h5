@@ -47,17 +47,19 @@ export default function Income() {
   const activeExpensesTotal = expenses
     .filter(exp => exp.active && exp.currency_code === formData.currency)
     .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
-  const netAfterExpenses = Math.max(0, amount - activeExpensesTotal);
+  const netAfterExpenses = amount - activeExpensesTotal; // Can be negative (deficit)
   
-  // Allocation: Necessity gets 60%, others get 10% each (excluding Savings)
-  const allocationBuckets = buckets.filter(b => b.name !== 'Savings');
+  // Allocation: Expenses bucket gets total expenses, then allocate remainder to other buckets
+  // Allocation: Necessity gets 60%, others get 10% each (excluding Savings and Expenses)
+  const allocationBuckets = buckets.filter(b => b.name !== 'Savings' && b.name !== 'Expenses');
   const necessityBucket = allocationBuckets.find(b => b.name === 'Necessity');
   const otherBuckets = allocationBuckets.filter(b => b.name !== 'Necessity');
   
-  const necessityAllocation = netAfterExpenses * 0.6; // 60%
-  const otherBucketAllocation = netAfterExpenses * 0.1; // 10% each
+  const expensesAllocation = activeExpensesTotal; // All expenses go to Expense Bucket
+  const necessityAllocation = netAfterExpenses > 0 ? netAfterExpenses * 0.6 : 0; // 60%
+  const otherBucketAllocation = netAfterExpenses > 0 ? netAfterExpenses * 0.1 : 0; // 10% each
   const totalAllocated = necessityAllocation + (otherBucketAllocation * otherBuckets.length);
-  const remainderToSavings = netAfterExpenses - totalAllocated;
+  const remainderToSavings = netAfterExpenses > 0 ? netAfterExpenses - totalAllocated : 0;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -268,10 +270,15 @@ export default function Income() {
                       </div>
                       <div className="flex justify-between text-sm font-semibold pt-1">
                         <span className="text-gray-900">Net After Expenses</span>
-                        <span className="text-teal-600">
+                        <span className={netAfterExpenses >= 0 ? 'text-teal-600' : 'text-red-600'}>
                           {formatCurrency(netAfterExpenses, formData.currency)}
                         </span>
                       </div>
+                      {netAfterExpenses < 0 && (
+                        <p className="text-xs text-red-600 mt-1">
+                          Deficit will carry forward
+                        </p>
+                      )}
                     </>
                   )}
                 </div>
@@ -279,6 +286,22 @@ export default function Income() {
                 {/* Bucket Allocations */}
                 <div className="space-y-3 mb-4">
                   <p className="text-xs text-gray-500 mb-2">Bucket Allocations</p>
+                  
+                  {/* Expenses Bucket - Total Active Expenses */}
+                  {expensesAllocation > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: '#8b5cf6' }}
+                        />
+                        <span className="text-sm text-gray-700">Expenses</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {formatCurrency(expensesAllocation, formData.currency)}
+                      </span>
+                    </div>
+                  )}
                   
                   {/* Necessity - 60% */}
                   {necessityBucket && (
