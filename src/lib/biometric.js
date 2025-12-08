@@ -69,9 +69,22 @@ export const isBiometricSupported = async () => {
 // Check if user has biometric credentials stored
 export const hasBiometricCredentials = () => {
   try {
+    addDebugLog('🔍 Checking for stored biometric credentials...', 'info');
     const stored = localStorage.getItem('biometric_enabled');
-    return stored === 'true';
+    const hasCredentials = stored === 'true';
+    
+    if (hasCredentials) {
+      const sessionData = localStorage.getItem('biometric_session');
+      addDebugLog(`✅ Biometric credentials found${sessionData ? ' (session data exists)' : ' (no session data)'}`, 'info');
+    } else {
+      addDebugLog('❌ No biometric credentials found in localStorage', 'warn');
+      // Debug: Check what's actually in localStorage
+      addDebugLog(`ℹ️ localStorage keys: ${Object.keys(localStorage).join(', ')}`, 'info');
+    }
+    
+    return hasCredentials;
   } catch (error) {
+    addDebugLog(`❌ Error checking biometric credentials: ${error.message}`, 'error');
     console.error('Error checking biometric credentials:', error);
     return false;
   }
@@ -81,8 +94,18 @@ export const hasBiometricCredentials = () => {
 export const storeBiometricSession = (sessionData) => {
   try {
     addDebugLog('💾 Storing biometric session...', 'info');
+    
+    // Check if localStorage is available
+    if (typeof localStorage === 'undefined') {
+      addDebugLog('❌ localStorage is not available!', 'error');
+      addDebugLog('⚠️ Make sure domStorageEnabled={true} in React Native WebView', 'error');
+      return false;
+    }
+    
     // Store a flag that biometric is enabled
     localStorage.setItem('biometric_enabled', 'true');
+    addDebugLog('✅ Stored biometric_enabled flag', 'info');
+    
     // Store session data (access token and refresh token)
     // In production, consider encrypting this data
     const sessionToStore = {
@@ -95,10 +118,22 @@ export const storeBiometricSession = (sessionData) => {
       },
     };
     localStorage.setItem('biometric_session', JSON.stringify(sessionToStore));
-    addDebugLog('✅ Biometric session stored successfully', 'info');
+    
+    // Verify it was stored
+    const verify = localStorage.getItem('biometric_enabled');
+    const verifySession = localStorage.getItem('biometric_session');
+    
+    if (verify === 'true' && verifySession) {
+      addDebugLog('✅ Biometric session stored and verified successfully', 'info');
+      addDebugLog(`ℹ️ Session stored for user: ${sessionData.user?.email || 'unknown'}`, 'info');
+    } else {
+      addDebugLog('⚠️ Storage verification failed - data may not have been saved', 'warn');
+    }
+    
     return true;
   } catch (error) {
     addDebugLog(`❌ Error storing biometric session: ${error.message}`, 'error');
+    addDebugLog(`⚠️ Error details: ${error.stack || 'No stack trace'}`, 'error');
     console.error('Error storing biometric session:', error);
     return false;
   }

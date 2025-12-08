@@ -45,20 +45,27 @@ export function AuthProvider({ children }) {
       
       // Store session for biometric login if available
       if (session) {
-        // Check if native bridge is available (for React Native) or WebAuthn (for web)
-        const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
-        const hasWebAuthn = typeof window !== 'undefined' && 
-                           typeof window.PublicKeyCredential !== 'undefined' &&
-                           typeof window.navigator.credentials !== 'undefined';
-        
-        if (hasNativeBridge || hasWebAuthn) {
-          storeBiometricSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-            expires_at: session.expires_at,
-            user: session.user,
-          });
-        }
+        // Wait a bit for bridge to be injected (if in React Native WebView)
+        setTimeout(() => {
+          // Check if native bridge is available (for React Native) or WebAuthn (for web)
+          const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+          const hasWebAuthn = typeof window !== 'undefined' && 
+                             typeof window.PublicKeyCredential !== 'undefined' &&
+                             typeof window.navigator.credentials !== 'undefined';
+          
+          if (hasNativeBridge || hasWebAuthn) {
+            console.log('💾 Storing biometric session on initial load...');
+            storeBiometricSession({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+              user: session.user,
+            });
+            console.log('✅ Biometric session stored');
+          } else {
+            console.log('⚠️ Biometric not available, skipping session storage');
+          }
+        }, 500); // Small delay to ensure bridge is injected
       }
     });
 
@@ -72,20 +79,27 @@ export function AuthProvider({ children }) {
       
       // Store session for biometric login if available
       if (session) {
-        // Check if native bridge is available (for React Native) or WebAuthn (for web)
-        const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
-        const hasWebAuthn = typeof window !== 'undefined' && 
-                           typeof window.PublicKeyCredential !== 'undefined' &&
-                           typeof window.navigator.credentials !== 'undefined';
-        
-        if (hasNativeBridge || hasWebAuthn) {
-          storeBiometricSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-            expires_at: session.expires_at,
-            user: session.user,
-          });
-        }
+        // Wait a bit for bridge to be injected (if in React Native WebView)
+        setTimeout(() => {
+          // Check if native bridge is available (for React Native) or WebAuthn (for web)
+          const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+          const hasWebAuthn = typeof window !== 'undefined' && 
+                             typeof window.PublicKeyCredential !== 'undefined' &&
+                             typeof window.navigator.credentials !== 'undefined';
+          
+          if (hasNativeBridge || hasWebAuthn) {
+            console.log('💾 Storing biometric session...');
+            storeBiometricSession({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+              user: session.user,
+            });
+            console.log('✅ Biometric session stored');
+          } else {
+            console.log('⚠️ Biometric not available, skipping session storage');
+          }
+        }, 500); // Small delay to ensure bridge is injected
       } else if (!session) {
         // Clear biometric session on logout
         clearBiometricSession();
@@ -113,20 +127,27 @@ export function AuthProvider({ children }) {
     
     // Store session for biometric login if login was successful
     if (data?.session && !error) {
-      // Check if native bridge is available (for React Native) or WebAuthn (for web)
-      const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
-      const hasWebAuthn = typeof window !== 'undefined' && 
-                         typeof window.PublicKeyCredential !== 'undefined' &&
-                         typeof window.navigator.credentials !== 'undefined';
-      
-      if (hasNativeBridge || hasWebAuthn) {
-        storeBiometricSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-          expires_at: data.session.expires_at,
-          user: data.session.user,
-        });
-      }
+      // Wait a bit for bridge to be injected (if in React Native WebView)
+      setTimeout(() => {
+        // Check if native bridge is available (for React Native) or WebAuthn (for web)
+        const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+        const hasWebAuthn = typeof window !== 'undefined' && 
+                           typeof window.PublicKeyCredential !== 'undefined' &&
+                           typeof window.navigator.credentials !== 'undefined';
+        
+        if (hasNativeBridge || hasWebAuthn) {
+          console.log('💾 Storing biometric session after sign in...');
+          storeBiometricSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            expires_at: data.session.expires_at,
+            user: data.session.user,
+          });
+          console.log('✅ Biometric session stored');
+        } else {
+          console.log('⚠️ Biometric not available, skipping session storage');
+        }
+      }, 500); // Small delay to ensure bridge is injected
     }
     
     return { data, error };
