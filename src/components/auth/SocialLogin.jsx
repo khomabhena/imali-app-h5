@@ -2,7 +2,9 @@
  * SocialLogin Component
  * Social login buttons for mobile app style
  */
-export default function SocialLogin({ onFacebook, onGoogle, onApple }) {
+import { FingerPrintIcon } from '@heroicons/react/24/outline';
+
+export default function SocialLogin({ onFacebook, onGoogle, onApple, onBiometric, showBiometric = false, biometricLoading = false }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 my-6">
@@ -12,6 +14,20 @@ export default function SocialLogin({ onFacebook, onGoogle, onApple }) {
       </div>
 
       <div className="flex items-center justify-center gap-4">
+        {/* Biometric */}
+        {showBiometric && (
+          <button
+            type="button"
+            onClick={onBiometric}
+            disabled={biometricLoading}
+            className="w-12 h-12 rounded-full bg-teal-500 flex items-center justify-center hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Sign in with Biometric"
+            title="Sign in with Biometric"
+          >
+            <FingerPrintIcon className="w-6 h-6 text-white" />
+          </button>
+        )}
+
         {/* Facebook */}
         <button
           type="button"

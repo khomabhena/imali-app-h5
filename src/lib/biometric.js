@@ -3,16 +3,32 @@
  * Uses WebAuthn API and Credential Management API for biometric authentication
  */
 
-// Check if WebAuthn is supported
-export const isBiometricSupported = () => {
+// Check if WebAuthn is supported (synchronous quick check)
+export const isBiometricSupportedSync = () => {
   if (typeof window === 'undefined') return false;
   
   return (
-    (typeof window.PublicKeyCredential !== 'undefined' &&
-     typeof window.navigator.credentials !== 'undefined') ||
-    (typeof window.navigator.credentials !== 'undefined' &&
-     typeof window.navigator.credentials.get !== 'undefined')
+    typeof window.PublicKeyCredential !== 'undefined' &&
+    typeof window.navigator.credentials !== 'undefined'
   );
+};
+
+// Check if biometric authentication is actually available (async, more accurate)
+export const isBiometricSupported = async () => {
+  if (typeof window === 'undefined') return false;
+  
+  // Quick synchronous check first
+  if (!isBiometricSupportedSync()) return false;
+  
+  // Check if platform authenticator (biometric) is actually available
+  try {
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    return available;
+  } catch (error) {
+    // If the async check fails, fall back to basic API check
+    console.warn('Biometric availability check failed, using fallback:', error);
+    return isBiometricSupportedSync();
+  }
 };
 
 // Check if user has biometric credentials stored
@@ -76,7 +92,8 @@ export const clearBiometricSession = () => {
 
 // Authenticate using biometric (simplified WebAuthn approach)
 export const authenticateBiometric = async () => {
-  if (!isBiometricSupported()) {
+  const supported = await isBiometricSupported();
+  if (!supported) {
     throw new Error('Biometric authentication is not supported on this device');
   }
 

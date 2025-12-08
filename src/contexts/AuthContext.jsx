@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   isBiometricSupported,
+  isBiometricSupportedSync,
   hasBiometricCredentials,
   storeBiometricSession,
   getBiometricSession,
@@ -27,16 +28,22 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [biometricSupported, setBiometricSupported] = useState(false);
 
   useEffect(() => {
+    // Check biometric support once on mount
+    isBiometricSupported().then(supported => {
+      setBiometricSupported(supported);
+    });
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Store session for biometric login if available
-      if (session && isBiometricSupported()) {
+      // Store session for biometric login if available (use sync check for immediate check)
+      if (session && isBiometricSupportedSync()) {
         storeBiometricSession({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
@@ -54,8 +61,8 @@ export function AuthProvider({ children }) {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Store session for biometric login if available
-      if (session && isBiometricSupported()) {
+      // Store session for biometric login if available (use sync check for immediate check)
+      if (session && isBiometricSupportedSync()) {
         storeBiometricSession({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
@@ -148,7 +155,8 @@ export function AuthProvider({ children }) {
   // Sign in with biometric
   const signInWithBiometric = async () => {
     try {
-      if (!isBiometricSupported()) {
+      const supported = await isBiometricSupported();
+      if (!supported) {
         return {
           error: { message: 'Biometric authentication is not supported on this device' },
         };
@@ -210,7 +218,7 @@ export function AuthProvider({ children }) {
     verifyOtp,
     resendVerificationEmail,
     signInWithBiometric,
-    isBiometricSupported: isBiometricSupported(),
+    isBiometricSupported: biometricSupported,
     hasBiometricCredentials: hasBiometricCredentials(),
     isAuthenticated: !!user,
   };
