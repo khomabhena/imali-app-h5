@@ -80,6 +80,7 @@ export const hasBiometricCredentials = () => {
 // Store session data for biometric login
 export const storeBiometricSession = (sessionData) => {
   try {
+    addDebugLog('💾 Storing biometric session...', 'info');
     // Store a flag that biometric is enabled
     localStorage.setItem('biometric_enabled', 'true');
     // Store session data (access token and refresh token)
@@ -94,8 +95,10 @@ export const storeBiometricSession = (sessionData) => {
       },
     };
     localStorage.setItem('biometric_session', JSON.stringify(sessionToStore));
+    addDebugLog('✅ Biometric session stored successfully', 'info');
     return true;
   } catch (error) {
+    addDebugLog(`❌ Error storing biometric session: ${error.message}`, 'error');
     console.error('Error storing biometric session:', error);
     return false;
   }

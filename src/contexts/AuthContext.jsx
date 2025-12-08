@@ -43,14 +43,22 @@ export function AuthProvider({ children }) {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Store session for biometric login if available (use sync check for immediate check)
-      if (session && isBiometricSupportedSync()) {
-        storeBiometricSession({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: session.expires_at,
-          user: session.user,
-        });
+      // Store session for biometric login if available
+      if (session) {
+        // Check if native bridge is available (for React Native) or WebAuthn (for web)
+        const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+        const hasWebAuthn = typeof window !== 'undefined' && 
+                           typeof window.PublicKeyCredential !== 'undefined' &&
+                           typeof window.navigator.credentials !== 'undefined';
+        
+        if (hasNativeBridge || hasWebAuthn) {
+          storeBiometricSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: session.expires_at,
+            user: session.user,
+          });
+        }
       }
     });
 
@@ -62,14 +70,22 @@ export function AuthProvider({ children }) {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Store session for biometric login if available (use sync check for immediate check)
-      if (session && isBiometricSupportedSync()) {
-        storeBiometricSession({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: session.expires_at,
-          user: session.user,
-        });
+      // Store session for biometric login if available
+      if (session) {
+        // Check if native bridge is available (for React Native) or WebAuthn (for web)
+        const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+        const hasWebAuthn = typeof window !== 'undefined' && 
+                           typeof window.PublicKeyCredential !== 'undefined' &&
+                           typeof window.navigator.credentials !== 'undefined';
+        
+        if (hasNativeBridge || hasWebAuthn) {
+          storeBiometricSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: session.expires_at,
+            user: session.user,
+          });
+        }
       } else if (!session) {
         // Clear biometric session on logout
         clearBiometricSession();
@@ -94,6 +110,25 @@ export function AuthProvider({ children }) {
       email,
       password,
     });
+    
+    // Store session for biometric login if login was successful
+    if (data?.session && !error) {
+      // Check if native bridge is available (for React Native) or WebAuthn (for web)
+      const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+      const hasWebAuthn = typeof window !== 'undefined' && 
+                         typeof window.PublicKeyCredential !== 'undefined' &&
+                         typeof window.navigator.credentials !== 'undefined';
+      
+      if (hasNativeBridge || hasWebAuthn) {
+        storeBiometricSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+          expires_at: data.session.expires_at,
+          user: data.session.user,
+        });
+      }
+    }
+    
     return { data, error };
   };
 
