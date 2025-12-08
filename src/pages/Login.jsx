@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PageLayout from '../components/layout/PageLayout';
 import ErrorMessage from '../components/auth/ErrorMessage';
 import EmailInput from '../components/auth/EmailInput';
@@ -10,10 +10,14 @@ import FormFooter from '../components/auth/FormFooter';
 import SocialLogin from '../components/auth/SocialLogin';
 import { useForm, validateEmail, validatePassword } from '../hooks/useForm';
 import { useAuth } from '../contexts/AuthContext';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { getDebugLogs, clearDebugLogs, subscribeToLogs } from '../lib/debugLogger';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [debugLogs, setDebugLogs] = useState([]);
+  const [showDebug, setShowDebug] = useState(false);
   const {
     signIn,
     signInWithOAuth,
@@ -33,6 +37,14 @@ export default function Login() {
       return newErrors;
     }
   );
+
+  // Subscribe to debug logs
+  useEffect(() => {
+    const unsubscribe = subscribeToLogs(() => {
+      setDebugLogs(getDebugLogs());
+    });
+    return unsubscribe;
+  }, []);
 
   // Check for OAuth error from callback
   useEffect(() => {
@@ -112,18 +124,33 @@ export default function Login() {
   const handleBiometricLogin = async () => {
     setLoading(true);
     setErrors({});
+    clearDebugLogs(); // Clear previous logs
+    setShowDebug(true); // Show debug panel
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setErrors({ submit: 'Authentication is taking too long. Please try again.' });
+      setLoading(false);
+    }, 60000); // 60 second timeout
     
     try {
       const { data, error } = await signInWithBiometric();
       
+      clearTimeout(timeoutId);
+      
       if (error) {
         setErrors({ submit: error.message || 'Biometric authentication failed' });
+        setLoading(false);
       } else if (data?.user || data?.session) {
         navigate('/dashboard');
+        // Note: loading will be reset by navigation or useEffect
+      } else {
+        setErrors({ submit: 'Authentication completed but session not found. Please try again.' });
+        setLoading(false);
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
-    } finally {
       setLoading(false);
     }
   };
@@ -133,6 +160,56 @@ export default function Login() {
       title="Welcome back"
       subtitle="Sign in to continue"
     >
+      {/* Debug Log Panel */}
+      {debugLogs.length > 0 && (
+        <div className="mb-4 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowDebug(!showDebug)}
+            className="w-full px-4 py-2 flex items-center justify-between bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            <span className="text-sm font-medium text-gray-700">
+              Debug Log ({debugLogs.length} entries)
+            </span>
+            {showDebug ? (
+              <ChevronUpIcon className="w-5 h-5 text-gray-500" />
+            ) : (
+              <ChevronDownIcon className="w-5 h-5 text-gray-500" />
+            )}
+          </button>
+          {showDebug && (
+            <div className="p-4 max-h-64 overflow-y-auto">
+              <div className="space-y-1 text-xs font-mono">
+                {debugLogs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={`p-2 rounded ${
+                      log.type === 'error'
+                        ? 'bg-red-50 text-red-700'
+                        : log.type === 'warn'
+                        ? 'bg-yellow-50 text-yellow-700'
+                        : 'bg-blue-50 text-blue-700'
+                    }`}
+                  >
+                    <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  clearDebugLogs();
+                  setDebugLogs([]);
+                }}
+                className="mt-3 text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                Clear logs
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="pb-6">
         {/* Form Card */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">

@@ -13,6 +13,7 @@ import {
   clearBiometricSession,
   authenticateBiometric,
 } from '../lib/biometric';
+import { addDebugLog } from '../lib/debugLogger';
 
 const AuthContext = createContext({});
 
@@ -155,30 +156,41 @@ export function AuthProvider({ children }) {
   // Sign in with biometric
   const signInWithBiometric = async () => {
     try {
+      addDebugLog('🔐 Starting biometric login...', 'info');
+      addDebugLog('📱 Checking biometric support...', 'info');
       const supported = await isBiometricSupported();
       if (!supported) {
+        addDebugLog('❌ Biometric not supported on this device', 'error');
         return {
           error: { message: 'Biometric authentication is not supported on this device' },
         };
       }
+      addDebugLog('✅ Biometric is supported', 'info');
 
+      addDebugLog('🔑 Checking for stored credentials...', 'info');
       if (!hasBiometricCredentials()) {
+        addDebugLog('❌ No biometric credentials found', 'warn');
         return {
           error: { message: 'No biometric credentials found. Please sign in with email first.' },
         };
       }
+      addDebugLog('✅ Credentials found', 'info');
 
+      addDebugLog('👆 Starting biometric authentication...', 'info');
       // Authenticate with biometric
       const biometricResult = await authenticateBiometric();
       
       if (!biometricResult.success) {
+        addDebugLog(`❌ Authentication failed: ${biometricResult.error}`, 'error');
         return {
           error: { message: biometricResult.error || 'Biometric authentication failed' },
         };
       }
+      addDebugLog('✅ Biometric authentication successful', 'info');
 
       // Restore session using stored tokens
       const storedSession = biometricResult.session;
+      addDebugLog('🔄 Restoring session...', 'info');
       
       // Set the session in Supabase
       const { data, error } = await supabase.auth.setSession({
@@ -187,16 +199,19 @@ export function AuthProvider({ children }) {
       });
 
       if (error) {
+        addDebugLog(`❌ Session restoration failed: ${error.message}`, 'error');
         // If session is expired, clear stored credentials
         if (error.message.includes('expired') || error.message.includes('invalid')) {
+          addDebugLog('🗑️ Clearing expired credentials', 'warn');
           clearBiometricSession();
         }
         return { data: null, error };
       }
 
+      addDebugLog('✅ Session restored successfully!', 'info');
       return { data, error: null };
     } catch (error) {
-      console.error('Error signing in with biometric:', error);
+      addDebugLog(`💥 Exception: ${error.message}`, 'error');
       return {
         data: null,
         error: { message: error.message || 'Biometric authentication failed' },

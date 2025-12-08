@@ -2,6 +2,7 @@
  * Biometric Authentication Service
  * Uses WebAuthn API and Credential Management API for biometric authentication
  */
+import { addDebugLog } from './debugLogger';
 
 // Check if WebAuthn is supported (synchronous quick check)
 export const isBiometricSupportedSync = () => {
@@ -126,14 +127,18 @@ export const authenticateBiometric = async () => {
   try {
     // Try native bridge first (for React Native WebView)
     if (isNativeBridgeAvailable()) {
+      addDebugLog('📱 Using native bridge for authentication', 'info');
       try {
+        addDebugLog('👆 Calling native biometric prompt...', 'info');
         await window.ReactNativeBiometric.authenticate('Authenticate to login');
+        addDebugLog('✅ Native authentication successful', 'info');
         // Native authentication successful
         return {
           success: true,
           session: storedSession,
         };
       } catch (nativeError) {
+        addDebugLog(`❌ Native authentication error: ${nativeError?.message || nativeError}`, 'error');
         // Handle native bridge errors
         // The bridge throws Error objects, so we check the message
         const errorMessage = nativeError?.message || String(nativeError || '');
@@ -143,6 +148,7 @@ export const authenticateBiometric = async () => {
         if (lowerMessage.includes('cancel') || 
             lowerMessage.includes('user') || 
             lowerMessage.includes('cancelled')) {
+          addDebugLog('🚫 User cancelled authentication', 'warn');
           throw new Error('Biometric authentication was cancelled');
         }
         // Re-throw other errors as-is
@@ -151,6 +157,7 @@ export const authenticateBiometric = async () => {
     }
     
     // Fall back to WebAuthn for web browsers
+    addDebugLog('🌐 Using WebAuthn for authentication', 'info');
     // Use WebAuthn to trigger biometric prompt
     // This is a simplified version - in production, you'd have proper credential management
     if (typeof window.PublicKeyCredential !== 'undefined') {
@@ -164,22 +171,27 @@ export const authenticateBiometric = async () => {
       };
 
       try {
-        await navigator.credentials.get({
+        addDebugLog('👆 Calling WebAuthn credentials.get...', 'info');
+        const credential = await navigator.credentials.get({
           publicKey: publicKeyCredentialRequestOptions,
         });
+        addDebugLog('✅ WebAuthn authentication successful', 'info');
         // If we get here, biometric was successful
         return {
           success: true,
           session: storedSession,
         };
       } catch (webauthnError) {
+        addDebugLog(`❌ WebAuthn error: ${webauthnError.name} - ${webauthnError.message}`, 'error');
         // If WebAuthn fails, fall back to stored session
         // This allows the feature to work even if WebAuthn isn't fully configured
         if (webauthnError.name === 'NotAllowedError') {
+          addDebugLog('🚫 User cancelled WebAuthn', 'warn');
           throw new Error('Biometric authentication was cancelled');
         }
         // For other errors, we'll still return the session
         // In production, you might want stricter validation
+        addDebugLog('⚠️ WebAuthn failed, using stored session', 'warn');
         return {
           success: true,
           session: storedSession,
