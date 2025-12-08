@@ -185,7 +185,8 @@ export default function Login() {
           onGoogle={() => handleSocialLogin('Google')}
           onApple={() => handleSocialLogin('Apple')}
           onBiometric={handleBiometricLogin}
-          showBiometric={isBiometricSupported && hasBiometricCredentials}
+          showBiometric={true}
+          // showBiometric={isBiometricSupported && hasBiometricCredentials}
           biometricLoading={loading}
         />
 
