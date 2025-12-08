@@ -136,7 +136,7 @@ export default function Login() {
     >
       <form onSubmit={handleSubmit} className="pb-6">
         {/* Biometric Login Button */}
-        {isBiometricSupported && hasBiometricCredentials && (
+        {/* {isBiometricSupported && hasBiometricCredentials && ( */}
           <div className="mb-4">
             <button
               type="button"
@@ -155,7 +155,7 @@ export default function Login() {
               <div className="flex-1 border-t border-gray-300"></div>
             </div>
           </div>
-        )}
+        {/* )} */}
 
         {/* Form Card */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
