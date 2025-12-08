@@ -308,24 +308,127 @@ export function AuthProvider({ children }) {
       // Restore session using stored tokens
       const storedSession = biometricResult.session;
       addDebugLog('🔄 Restoring session...', 'info');
+      addDebugLog(`ℹ️ Stored session keys: ${Object.keys(storedSession).join(', ')}`, 'info');
+      addDebugLog(`ℹ️ Access token exists: ${!!storedSession.access_token}`, 'info');
+      addDebugLog(`ℹ️ Refresh token exists: ${!!storedSession.refresh_token}`, 'info');
+      addDebugLog(`ℹ️ Access token length: ${storedSession.access_token?.length || 0}`, 'info');
+      addDebugLog(`ℹ️ Refresh token length: ${storedSession.refresh_token?.length || 0}`, 'info');
+      
+      // Check if tokens are expired
+      if (storedSession.expires_at) {
+        const expiresAt = storedSession.expires_at;
+        const now = Math.floor(Date.now() / 1000);
+        const isExpired = expiresAt < now;
+        addDebugLog(`ℹ️ Token expires at: ${new Date(expiresAt * 1000).toISOString()}`, 'info');
+        addDebugLog(`ℹ️ Current time: ${new Date().toISOString()}`, 'info');
+        addDebugLog(`ℹ️ Token expired: ${isExpired}`, isExpired ? 'warn' : 'info');
+        
+        if (isExpired) {
+          addDebugLog('🔄 Token expired, attempting to refresh...', 'info');
+          // Try to refresh the session using the refresh token
+          try {
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+              refresh_token: storedSession.refresh_token,
+            });
+            
+            if (refreshError) {
+              addDebugLog(`❌ Token refresh failed: ${refreshError.message}`, 'error');
+              addDebugLog('🗑️ Clearing expired credentials', 'warn');
+              clearBiometricSession();
+              return { data: null, error: refreshError };
+            }
+            
+            addDebugLog('✅ Token refreshed successfully', 'info');
+            // Update stored session with new tokens
+            if (refreshData.session) {
+              storeBiometricSession({
+                access_token: refreshData.session.access_token,
+                refresh_token: refreshData.session.refresh_token,
+                expires_at: refreshData.session.expires_at,
+                user: refreshData.session.user,
+              });
+            }
+            return { data: refreshData, error: null };
+          } catch (refreshErr) {
+            addDebugLog(`❌ Token refresh exception: ${refreshErr.message}`, 'error');
+            clearBiometricSession();
+            return { 
+              data: null, 
+              error: { message: 'Session expired and could not be refreshed. Please sign in again.' } 
+            };
+          }
+        }
+      }
       
       // Set the session in Supabase
-      const { data, error } = await supabase.auth.setSession({
+      addDebugLog('📤 Calling supabase.auth.setSession...', 'info');
+      
+      // Try to set session - Supabase expects access_token and refresh_token
+      const sessionToSet = {
         access_token: storedSession.access_token,
         refresh_token: storedSession.refresh_token,
-      });
+      };
+      
+      // If we have expires_at, include it (though it's optional)
+      if (storedSession.expires_at) {
+        sessionToSet.expires_at = storedSession.expires_at;
+      }
+      
+      addDebugLog(`ℹ️ Session object keys: ${Object.keys(sessionToSet).join(', ')}`, 'info');
+      
+      const { data, error } = await supabase.auth.setSession(sessionToSet);
+      
+      // Verify the session was set by getting it back
+      if (!error) {
+        addDebugLog('✅ setSession call succeeded, verifying...', 'info');
+        const { data: verifyData, error: verifyError } = await supabase.auth.getSession();
+        if (verifyError || !verifyData.session) {
+          addDebugLog(`⚠️ Session verification failed: ${verifyError?.message || 'No session found'}`, 'warn');
+        } else {
+          addDebugLog(`✅ Session verified - user: ${verifyData.session.user?.email || 'unknown'}`, 'info');
+        }
+      }
 
       if (error) {
         addDebugLog(`❌ Session restoration failed: ${error.message}`, 'error');
-        // If session is expired, clear stored credentials
-        if (error.message.includes('expired') || error.message.includes('invalid')) {
-          addDebugLog('🗑️ Clearing expired credentials', 'warn');
+        addDebugLog(`ℹ️ Error code: ${error.status || 'unknown'}`, 'error');
+        addDebugLog(`ℹ️ Full error: ${JSON.stringify(error)}`, 'error');
+        
+        // Try refreshing the token as a fallback
+        if (storedSession.refresh_token) {
+          addDebugLog('🔄 Attempting token refresh as fallback...', 'info');
+          try {
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+              refresh_token: storedSession.refresh_token,
+            });
+            
+            if (!refreshError && refreshData.session) {
+              addDebugLog('✅ Token refresh successful, updating stored session', 'info');
+              storeBiometricSession({
+                access_token: refreshData.session.access_token,
+                refresh_token: refreshData.session.refresh_token,
+                expires_at: refreshData.session.expires_at,
+                user: refreshData.session.user,
+              });
+              return { data: refreshData, error: null };
+            } else {
+              addDebugLog(`❌ Token refresh also failed: ${refreshError?.message}`, 'error');
+            }
+          } catch (refreshErr) {
+            addDebugLog(`❌ Token refresh exception: ${refreshErr.message}`, 'error');
+          }
+        }
+        
+        // If session is expired or invalid, clear stored credentials
+        if (error.message.includes('expired') || error.message.includes('invalid') || error.message.includes('missing')) {
+          addDebugLog('🗑️ Clearing invalid/expired credentials', 'warn');
           clearBiometricSession();
         }
         return { data: null, error };
       }
 
       addDebugLog('✅ Session restored successfully!', 'info');
+      addDebugLog(`ℹ️ Session user: ${data.session?.user?.email || 'unknown'}`, 'info');
       return { data, error: null };
     } catch (error) {
       addDebugLog(`💥 Exception: ${error.message}`, 'error');
