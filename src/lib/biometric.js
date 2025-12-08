@@ -24,28 +24,56 @@ const isNativeBridgeAvailable = () => {
 export const isBiometricSupported = async () => {
   if (typeof window === 'undefined') return false;
   
+  addDebugLog('🔍 Checking if native bridge is available...', 'info');
+  
   // Try native bridge first (for React Native WebView)
   if (isNativeBridgeAvailable()) {
+    addDebugLog('✅ Native bridge found, checking availability...', 'info');
     try {
-      const available = await window.ReactNativeBiometric.isAvailable();
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Biometric check timeout')), 10000); // 10 second timeout
+      });
+      
+      const availablePromise = window.ReactNativeBiometric.isAvailable();
+      const available = await Promise.race([availablePromise, timeoutPromise]);
+      
+      addDebugLog(`✅ Native bridge check complete: ${available ? 'available' : 'not available'}`, 'info');
       return available;
     } catch (error) {
-      console.warn('Native biometric check failed:', error);
+      addDebugLog(`⚠️ Native biometric check failed: ${error.message}`, 'warn');
       // Fall through to WebAuthn check
     }
+  } else {
+    addDebugLog('ℹ️ Native bridge not available, trying WebAuthn...', 'info');
   }
   
   // Quick synchronous check for WebAuthn
-  if (!isBiometricSupportedSync()) return false;
+  if (!isBiometricSupportedSync()) {
+    addDebugLog('❌ WebAuthn APIs not available', 'error');
+    return false;
+  }
+  
+  addDebugLog('🔍 Checking WebAuthn platform authenticator...', 'info');
   
   // Check if platform authenticator (biometric) is actually available
   try {
-    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('WebAuthn check timeout')), 10000); // 10 second timeout
+    });
+    
+    const availablePromise = PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    const available = await Promise.race([availablePromise, timeoutPromise]);
+    
+    addDebugLog(`✅ WebAuthn check complete: ${available ? 'available' : 'not available'}`, 'info');
     return available;
   } catch (error) {
     // If the async check fails, fall back to basic API check
-    console.warn('Biometric availability check failed, using fallback:', error);
-    return isBiometricSupportedSync();
+    addDebugLog(`⚠️ WebAuthn check failed: ${error.message}, using fallback`, 'warn');
+    const fallbackResult = isBiometricSupportedSync();
+    addDebugLog(`ℹ️ Fallback result: ${fallbackResult ? 'supported' : 'not supported'}`, 'info');
+    return fallbackResult;
   }
 };
 
