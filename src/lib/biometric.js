@@ -13,11 +13,28 @@ export const isBiometricSupportedSync = () => {
   );
 };
 
+// Check if native bridge is available (React Native WebView)
+const isNativeBridgeAvailable = () => {
+  return typeof window !== 'undefined' && 
+         window.ReactNativeBiometric !== undefined;
+};
+
 // Check if biometric authentication is actually available (async, more accurate)
 export const isBiometricSupported = async () => {
   if (typeof window === 'undefined') return false;
   
-  // Quick synchronous check first
+  // Try native bridge first (for React Native WebView)
+  if (isNativeBridgeAvailable()) {
+    try {
+      const available = await window.ReactNativeBiometric.isAvailable();
+      return available;
+    } catch (error) {
+      console.warn('Native biometric check failed:', error);
+      // Fall through to WebAuthn check
+    }
+  }
+  
+  // Quick synchronous check for WebAuthn
   if (!isBiometricSupportedSync()) return false;
   
   // Check if platform authenticator (biometric) is actually available
@@ -90,7 +107,7 @@ export const clearBiometricSession = () => {
   }
 };
 
-// Authenticate using biometric (simplified WebAuthn approach)
+// Authenticate using biometric (native bridge or WebAuthn)
 export const authenticateBiometric = async () => {
   const supported = await isBiometricSupported();
   if (!supported) {
@@ -107,6 +124,33 @@ export const authenticateBiometric = async () => {
   }
 
   try {
+    // Try native bridge first (for React Native WebView)
+    if (isNativeBridgeAvailable()) {
+      try {
+        await window.ReactNativeBiometric.authenticate('Authenticate to login');
+        // Native authentication successful
+        return {
+          success: true,
+          session: storedSession,
+        };
+      } catch (nativeError) {
+        // Handle native bridge errors
+        // The bridge throws Error objects, so we check the message
+        const errorMessage = nativeError?.message || String(nativeError || '');
+        const lowerMessage = errorMessage.toLowerCase();
+        
+        // If user cancels, throw cancellation error
+        if (lowerMessage.includes('cancel') || 
+            lowerMessage.includes('user') || 
+            lowerMessage.includes('cancelled')) {
+          throw new Error('Biometric authentication was cancelled');
+        }
+        // Re-throw other errors as-is
+        throw nativeError;
+      }
+    }
+    
+    // Fall back to WebAuthn for web browsers
     // Use WebAuthn to trigger biometric prompt
     // This is a simplified version - in production, you'd have proper credential management
     if (typeof window.PublicKeyCredential !== 'undefined') {

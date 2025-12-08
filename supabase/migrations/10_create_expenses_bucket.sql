@@ -10,3 +10,4 @@ ON CONFLICT (name) DO NOTHING;
 -- Note: allocation_pct is 0 because expenses are calculated dynamically
 -- based on total active expenses, not a fixed percentage
 
+
