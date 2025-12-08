@@ -5,6 +5,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { storeBiometricSession } from '../lib/biometric';
+import { addDebugLog } from '../lib/debugLogger';
 import PageLayout from '../components/layout/PageLayout';
 
 export default function AuthCallback() {
@@ -21,6 +23,7 @@ export default function AuthCallback() {
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
+          addDebugLog(`❌ Auth callback error: ${error.message}`, 'error');
           console.error('Auth callback error:', error);
           setStatus('error');
           setTimeout(() => {
@@ -31,6 +34,29 @@ export default function AuthCallback() {
 
         if (data?.session) {
           // Successfully authenticated
+          addDebugLog('✅ OAuth sign-in successful', 'info');
+          // Store session for biometric login if available
+          setTimeout(() => {
+            // Check if native bridge is available (for React Native) or WebAuthn (for web)
+            const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+            const hasWebAuthn = typeof window !== 'undefined' && 
+                               typeof window.PublicKeyCredential !== 'undefined' &&
+                               typeof window.navigator.credentials !== 'undefined';
+            
+            if (hasNativeBridge || hasWebAuthn) {
+              addDebugLog('💾 Storing biometric session after OAuth login...', 'info');
+              storeBiometricSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+                expires_at: data.session.expires_at,
+                user: data.session.user,
+              });
+              addDebugLog('✅ Biometric session stored after OAuth', 'info');
+            } else {
+              addDebugLog('⚠️ Biometric not available, skipping session storage', 'warn');
+            }
+          }, 500); // Small delay to ensure bridge is injected
+          
           setStatus('success');
           setTimeout(() => {
             navigate('/dashboard', { replace: true });
@@ -42,6 +68,7 @@ export default function AuthCallback() {
           const errorDescription = hashParams.get('error_description');
           
           if (errorParam) {
+            addDebugLog(`❌ OAuth error: ${errorParam} - ${errorDescription}`, 'error');
             console.error('OAuth error:', errorParam, errorDescription);
             setStatus('error');
             setTimeout(() => {
@@ -56,6 +83,7 @@ export default function AuthCallback() {
           }
         }
       } catch (err) {
+        addDebugLog(`💥 Unexpected error: ${err.message}`, 'error');
         console.error('Unexpected error:', err);
         setStatus('error');
         setTimeout(() => {
@@ -67,6 +95,29 @@ export default function AuthCallback() {
     // Also listen to auth state changes as a backup
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        addDebugLog(`✅ Auth state changed: ${event}`, 'info');
+        // Store session for biometric login if available
+        setTimeout(() => {
+          // Check if native bridge is available (for React Native) or WebAuthn (for web)
+          const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
+          const hasWebAuthn = typeof window !== 'undefined' && 
+                             typeof window.PublicKeyCredential !== 'undefined' &&
+                             typeof window.navigator.credentials !== 'undefined';
+          
+          if (hasNativeBridge || hasWebAuthn) {
+            addDebugLog('💾 Storing biometric session after OAuth (from auth state change)...', 'info');
+            storeBiometricSession({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+              user: session.user,
+            });
+            addDebugLog('✅ Biometric session stored after OAuth', 'info');
+          } else {
+            addDebugLog('⚠️ Biometric not available, skipping session storage', 'warn');
+          }
+        }, 500); // Small delay to ensure bridge is injected
+        
         setStatus('success');
         setTimeout(() => {
           navigate('/dashboard', { replace: true });
