@@ -45,8 +45,8 @@ export function AuthProvider({ children }) {
       
       // Store session for biometric login if available
       if (session) {
-        // Wait a bit for bridge to be injected (if in React Native WebView)
-        setTimeout(() => {
+        // Store immediately, then verify and retry if needed
+        const attemptStorage = (attempt = 1) => {
           // Check if native bridge is available (for React Native) or WebAuthn (for web)
           const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
           const hasWebAuthn = typeof window !== 'undefined' && 
@@ -54,18 +54,37 @@ export function AuthProvider({ children }) {
                              typeof window.navigator.credentials !== 'undefined';
           
           if (hasNativeBridge || hasWebAuthn) {
-            console.log('💾 Storing biometric session on initial load...');
-            storeBiometricSession({
+            console.log(`💾 Storing biometric session on initial load (attempt ${attempt})...`);
+            const stored = storeBiometricSession({
               access_token: session.access_token,
               refresh_token: session.refresh_token,
               expires_at: session.expires_at,
               user: session.user,
             });
-            console.log('✅ Biometric session stored');
+            
+            // Verify storage was successful
+            setTimeout(() => {
+              const verified = localStorage.getItem('biometric_enabled') === 'true';
+              if (verified) {
+                console.log('✅ Biometric session stored and verified');
+              } else if (attempt < 3) {
+                console.log(`⚠️ Storage verification failed, retrying (attempt ${attempt + 1})...`);
+                setTimeout(() => attemptStorage(attempt + 1), 500);
+              } else {
+                console.error('❌ Failed to store biometric session after 3 attempts');
+              }
+            }, 100);
+          } else if (attempt < 3) {
+            // Bridge not ready yet, retry
+            console.log(`⏳ Bridge not ready, retrying in 500ms (attempt ${attempt})...`);
+            setTimeout(() => attemptStorage(attempt + 1), 500);
           } else {
-            console.log('⚠️ Biometric not available, skipping session storage');
+            console.log('⚠️ Biometric not available after 3 attempts, skipping session storage');
           }
-        }, 500); // Small delay to ensure bridge is injected
+        };
+        
+        // Start storage attempt immediately
+        attemptStorage(1);
       }
     });
 
@@ -79,8 +98,8 @@ export function AuthProvider({ children }) {
       
       // Store session for biometric login if available
       if (session) {
-        // Wait a bit for bridge to be injected (if in React Native WebView)
-        setTimeout(() => {
+        // Store immediately, then verify and retry if needed
+        const attemptStorage = (attempt = 1) => {
           // Check if native bridge is available (for React Native) or WebAuthn (for web)
           const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
           const hasWebAuthn = typeof window !== 'undefined' && 
@@ -88,22 +107,42 @@ export function AuthProvider({ children }) {
                              typeof window.navigator.credentials !== 'undefined';
           
           if (hasNativeBridge || hasWebAuthn) {
-            console.log('💾 Storing biometric session...');
-            storeBiometricSession({
+            console.log(`💾 Storing biometric session on auth change (attempt ${attempt})...`);
+            const stored = storeBiometricSession({
               access_token: session.access_token,
               refresh_token: session.refresh_token,
               expires_at: session.expires_at,
               user: session.user,
             });
-            console.log('✅ Biometric session stored');
+            
+            // Verify storage was successful
+            setTimeout(() => {
+              const verified = localStorage.getItem('biometric_enabled') === 'true';
+              if (verified) {
+                console.log('✅ Biometric session stored and verified');
+              } else if (attempt < 3) {
+                console.log(`⚠️ Storage verification failed, retrying (attempt ${attempt + 1})...`);
+                setTimeout(() => attemptStorage(attempt + 1), 500);
+              } else {
+                console.error('❌ Failed to store biometric session after 3 attempts');
+              }
+            }, 100);
+          } else if (attempt < 3) {
+            // Bridge not ready yet, retry
+            console.log(`⏳ Bridge not ready, retrying in 500ms (attempt ${attempt})...`);
+            setTimeout(() => attemptStorage(attempt + 1), 500);
           } else {
-            console.log('⚠️ Biometric not available, skipping session storage');
+            console.log('⚠️ Biometric not available after 3 attempts, skipping session storage');
           }
-        }, 500); // Small delay to ensure bridge is injected
+        };
+        
+        // Start storage attempt immediately
+        attemptStorage(1);
       } else if (!session) {
-        // Don't clear biometric session on logout - keep it for next login
-        // The session will be validated/refreshed when user uses biometric login
-        console.log('ℹ️ User logged out, but keeping biometric credentials for next login');
+        // DON'T clear biometric session on logout - keep it for next login
+        // This allows users to use biometric login even after signing out
+        // clearBiometricSession(); // Commented out - keep credentials for biometric login
+        console.log('ℹ️ Session cleared, but keeping biometric credentials for next login');
       }
     });
 
@@ -128,8 +167,8 @@ export function AuthProvider({ children }) {
     
     // Store session for biometric login if login was successful
     if (data?.session && !error) {
-      // Wait a bit for bridge to be injected (if in React Native WebView)
-      setTimeout(() => {
+      // Store immediately, then verify and retry if needed
+      const attemptStorage = (attempt = 1) => {
         // Check if native bridge is available (for React Native) or WebAuthn (for web)
         const hasNativeBridge = typeof window !== 'undefined' && window.ReactNativeBiometric !== undefined;
         const hasWebAuthn = typeof window !== 'undefined' && 
@@ -137,18 +176,37 @@ export function AuthProvider({ children }) {
                            typeof window.navigator.credentials !== 'undefined';
         
         if (hasNativeBridge || hasWebAuthn) {
-          console.log('💾 Storing biometric session after sign in...');
-          storeBiometricSession({
+          console.log(`💾 Storing biometric session after sign in (attempt ${attempt})...`);
+          const stored = storeBiometricSession({
             access_token: data.session.access_token,
             refresh_token: data.session.refresh_token,
             expires_at: data.session.expires_at,
             user: data.session.user,
           });
-          console.log('✅ Biometric session stored');
+          
+          // Verify storage was successful
+          setTimeout(() => {
+            const verified = localStorage.getItem('biometric_enabled') === 'true';
+            if (verified) {
+              console.log('✅ Biometric session stored and verified');
+            } else if (attempt < 3) {
+              console.log(`⚠️ Storage verification failed, retrying (attempt ${attempt + 1})...`);
+              setTimeout(() => attemptStorage(attempt + 1), 500);
+            } else {
+              console.error('❌ Failed to store biometric session after 3 attempts');
+            }
+          }, 100);
+        } else if (attempt < 3) {
+          // Bridge not ready yet, retry
+          console.log(`⏳ Bridge not ready, retrying in 500ms (attempt ${attempt})...`);
+          setTimeout(() => attemptStorage(attempt + 1), 500);
         } else {
-          console.log('⚠️ Biometric not available, skipping session storage');
+          console.log('⚠️ Biometric not available after 3 attempts, skipping session storage');
         }
-      }, 500); // Small delay to ensure bridge is injected
+      };
+      
+      // Start storage attempt immediately
+      attemptStorage(1);
     }
     
     return { data, error };
@@ -157,6 +215,8 @@ export function AuthProvider({ children }) {
   // Sign out
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    // DON'T clear biometric session on sign out - keep it for next login
+    // clearBiometricSession(); // Commented out - keep credentials for biometric login
     return { error };
   };
 
