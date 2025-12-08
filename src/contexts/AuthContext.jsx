@@ -101,8 +101,9 @@ export function AuthProvider({ children }) {
           }
         }, 500); // Small delay to ensure bridge is injected
       } else if (!session) {
-        // Clear biometric session on logout
-        clearBiometricSession();
+        // Don't clear biometric session on logout - keep it for next login
+        // The session will be validated/refreshed when user uses biometric login
+        console.log('ℹ️ User logged out, but keeping biometric credentials for next login');
       }
     });
 
