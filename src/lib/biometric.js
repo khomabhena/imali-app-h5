@@ -28,22 +28,11 @@ export const isBiometricSupported = async () => {
   
   // Try native bridge first (for React Native WebView)
   if (isNativeBridgeAvailable()) {
-    addDebugLog('✅ Native bridge found, checking availability...', 'info');
-    try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Biometric check timeout')), 10000); // 10 second timeout
-      });
-      
-      const availablePromise = window.ReactNativeBiometric.isAvailable();
-      const available = await Promise.race([availablePromise, timeoutPromise]);
-      
-      addDebugLog(`✅ Native bridge check complete: ${available ? 'available' : 'not available'}`, 'info');
-      return available;
-    } catch (error) {
-      addDebugLog(`⚠️ Native biometric check failed: ${error.message}`, 'warn');
-      // Fall through to WebAuthn check
-    }
+    addDebugLog('✅ Native bridge found', 'info');
+    // If native bridge exists, assume it's supported and let authentication handle the actual check
+    // This avoids the timeout issue with isAvailable()
+    addDebugLog('ℹ️ Assuming biometric is supported (will verify during authentication)', 'info');
+    return true; // Return true if bridge exists, actual availability will be checked during auth
   } else {
     addDebugLog('ℹ️ Native bridge not available, trying WebAuthn...', 'info');
   }
@@ -60,7 +49,7 @@ export const isBiometricSupported = async () => {
   try {
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('WebAuthn check timeout')), 10000); // 10 second timeout
+      setTimeout(() => reject(new Error('WebAuthn check timeout')), 5000); // 5 second timeout
     });
     
     const availablePromise = PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
@@ -158,7 +147,17 @@ export const authenticateBiometric = async () => {
       addDebugLog('📱 Using native bridge for authentication', 'info');
       try {
         addDebugLog('👆 Calling native biometric prompt...', 'info');
-        await window.ReactNativeBiometric.authenticate('Authenticate to login');
+        
+        // Add timeout to authentication call as well
+        const authTimeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Authentication timeout - taking too long')), 30000); // 30 second timeout
+        });
+        
+        await Promise.race([
+          window.ReactNativeBiometric.authenticate('Authenticate to login'),
+          authTimeoutPromise
+        ]);
+        
         addDebugLog('✅ Native authentication successful', 'info');
         // Native authentication successful
         return {
@@ -179,6 +178,13 @@ export const authenticateBiometric = async () => {
           addDebugLog('🚫 User cancelled authentication', 'warn');
           throw new Error('Biometric authentication was cancelled');
         }
+        
+        // If timeout, provide helpful message
+        if (lowerMessage.includes('timeout')) {
+          addDebugLog('⏱️ Authentication timed out', 'error');
+          throw new Error('Biometric authentication timed out. Please try again.');
+        }
+        
         // Re-throw other errors as-is
         throw nativeError;
       }
