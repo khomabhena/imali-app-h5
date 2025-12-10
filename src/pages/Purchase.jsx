@@ -172,7 +172,8 @@ export default function Purchase() {
   const modeLabels = {
     light: 'Light',
     intermediate: 'Intermediate',
-    strict: 'Strict'
+    strict: 'Strict',
+    desperate: 'Desperate'
   };
 
   // Determine header color based on affordability status

@@ -137,6 +137,7 @@ async function getExpensesBucket() {
         limiter_light: 1,
         limiter_intermediate: 1,
         limiter_strict: 1,
+        limiter_desperate: 1,
         color: '#8b5cf6',
         display_order: 7,
       })

@@ -133,6 +133,8 @@ function getLimiter(bucket, mode) {
       return bucket.limiter_intermediate;
     case 'strict':
       return bucket.limiter_strict;
+    case 'desperate':
+      return bucket.limiter_desperate || bucket.limiter_strict; // Fallback to strict if desperate not available
     default:
       return bucket.limiter_intermediate;
   }

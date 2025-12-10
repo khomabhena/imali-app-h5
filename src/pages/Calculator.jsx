@@ -37,6 +37,7 @@ const MODES = [
   { id: 'light', name: 'Light', description: 'More flexible' },
   { id: 'intermediate', name: 'Intermediate', description: 'Balanced' },
   { id: 'strict', name: 'Strict', description: 'Maximum discipline' },
+  { id: 'desperate', name: 'Desperate', description: 'Allows spending with lower balances' },
 ];
 
 export default function Calculator() {

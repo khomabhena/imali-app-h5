@@ -74,6 +74,13 @@ export const mockModeLimiters = {
     Emergency: 5, 
     Fun: 10 
   },
+  desperate: { 
+    Necessity: 1.5, 
+    Investment: 1.5, 
+    Learning: 1.5, 
+    Emergency: 1.2, 
+    Fun: 5 
+  },
 };
 
 export const mockActiveExpenses = [

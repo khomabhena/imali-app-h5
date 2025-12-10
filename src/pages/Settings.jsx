@@ -49,6 +49,13 @@ const MODES = [
     color: 'bg-red-50 border-red-200',
     textColor: 'text-red-700',
   },
+  {
+    id: 'desperate',
+    name: 'Desperate',
+    description: 'For desperate situations - allows spending with lower balances',
+    color: 'bg-purple-50 border-purple-200',
+    textColor: 'text-purple-700',
+  },
 ];
 
 const BUCKET_NAMES = ['Necessity', 'Investment', 'Learning', 'Emergency', 'Fun'];
@@ -75,7 +82,9 @@ export default function Settings() {
           ? bucket.limiter_light 
           : modeId === 'intermediate' 
           ? bucket.limiter_intermediate 
-          : bucket.limiter_strict;
+          : modeId === 'strict'
+          ? bucket.limiter_strict
+          : bucket.limiter_desperate || bucket.limiter_strict; // Fallback to strict if desperate not available
       }
     });
     return limiters;
